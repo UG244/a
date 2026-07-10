@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../services/auth_service.dart';
 import '../../services/product_service.dart';
 import '../../services/transaction_service.dart';
 import '../../models/product.dart';
@@ -13,7 +12,6 @@ class AdminDashboardScreen extends StatefulWidget {
 }
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
-  final _authService = AuthService();
   final _productService = ProductService();
   final _transactionService = TransactionService();
   int _totalProducts = 0;
@@ -23,7 +21,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   int _totalTransactions = 0;
   List<Product> _recentProducts = [];
   bool _isLoading = true;
-  String _username = '';
   int _currentNavIndex = 0;
 
   @override
@@ -33,27 +30,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   }
 
   Future<void> _initData() async {
-    await _checkAccess();
-    _loadUsername();
     _loadDashboardData();
-  }
-
-  Future<void> _checkAccess() async {
-    final isAdmin = await _authService.isAdmin();
-    if (!isAdmin && mounted) {
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/user-home',
-        (route) => false,
-      );
-    }
-  }
-
-  Future<void> _loadUsername() async {
-    final user = await _authService.getCurrentUser();
-    if (mounted && user != null) {
-      setState(() => _username = user.username);
-    }
   }
 
   Future<void> _loadDashboardData() async {
@@ -155,7 +132,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    'Halo, $_username',
+                                    'Halo, Admin!',
                                     style: TextStyle(
                                       color: Colors.white.withValues(
                                         alpha: 0.85,
@@ -235,7 +212,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Quick actions - redesigned
+                  // Quick actions
                   Text(
                     'Aksi Cepat',
                     style: const TextStyle(
@@ -266,10 +243,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         label: 'Lihat Produk',
                         color: const Color(0xFF22C55E),
                         onTap: () async {
-                          await Navigator.pushNamed(
-                            context,
-                            '/admin-products',
-                          );
+                          await Navigator.pushNamed(context, '/admin-products');
                           _loadDashboardData();
                         },
                       ),
@@ -277,46 +251,36 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                         icon: Icons.receipt,
                         label: 'Laporan',
                         color: const Color(0xFF8B5CF6),
-                        onTap: () => Navigator.pushNamed(
-                          context,
-                          '/admin-sales-report',
-                        ),
+                        onTap: () =>
+                            Navigator.pushNamed(context, '/admin-sales-report'),
                       ),
                       _buildQuickAction(
                         icon: Icons.discount,
                         label: 'Kupon Diskon',
                         color: const Color(0xFFF97316),
-                        onTap: () => Navigator.pushNamed(
-                          context,
-                          '/admin-coupon',
-                        ),
+                        onTap: () =>
+                            Navigator.pushNamed(context, '/admin-coupon'),
                       ),
                       _buildQuickAction(
                         icon: Icons.payment,
                         label: 'Pembayaran',
                         color: const Color(0xFFEC4899),
-                        onTap: () => Navigator.pushNamed(
-                          context,
-                          '/admin-payment',
-                        ),
+                        onTap: () =>
+                            Navigator.pushNamed(context, '/admin-payment'),
                       ),
                       _buildQuickAction(
                         icon: Icons.qr_code,
                         label: 'QRIS',
                         color: const Color(0xFF06B6D4),
-                        onTap: () => Navigator.pushNamed(
-                          context,
-                          '/admin-qris',
-                        ),
+                        onTap: () =>
+                            Navigator.pushNamed(context, '/admin-qris'),
                       ),
                       _buildQuickAction(
                         icon: Icons.history,
                         label: 'Riwayat',
                         color: const Color(0xFF6366F1),
-                        onTap: () => Navigator.pushNamed(
-                          context,
-                          '/user-orders',
-                        ),
+                        onTap: () =>
+                            Navigator.pushNamed(context, '/user-orders'),
                       ),
                     ],
                   ),
@@ -405,7 +369,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 ],
               ),
             ),
-      // Bottom Navigation Bar for quick access
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: [
@@ -428,10 +391,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 Navigator.pushNamed(context, '/admin-products');
                 break;
               case 2:
-                _showComingSoon('Kupon Diskon');
+                Navigator.pushNamed(context, '/admin-coupon');
                 break;
               case 3:
-                _showComingSoon('Pembayaran QRIS');
+                Navigator.pushNamed(context, '/admin-qris');
                 break;
               case 4:
                 Navigator.pushNamed(context, '/admin-sales-report');
@@ -473,54 +436,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  void _showComingSoon(String feature) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E3A8A).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Icon(
-                Icons.construction,
-                size: 48,
-                color: Color(0xFF1E3A8A),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              feature,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Fitur ini sedang dalam pengembangan',
-              style: TextStyle(color: Colors.grey),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Tutup'),
-          ),
-        ],
       ),
     );
   }
@@ -579,9 +494,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       width: (MediaQuery.of(context).size.width - 16 * 2 - 10 * 3) / 4,
       child: Card(
         elevation: 1,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(12),

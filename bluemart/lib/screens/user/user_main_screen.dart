@@ -15,13 +15,20 @@ class UserMainScreen extends StatefulWidget {
 
 class _UserMainScreenState extends State<UserMainScreen> {
   int _currentIndex = 0;
+  final _homeKey = GlobalKey<UserHomeScreenState>();
 
-  final List<Widget> _screens = [
-    const UserHomeScreen(),
-    const UserOrderHistoryScreen(),
-    const UserFavoriteScreen(),
-    const ProfileScreen(),
-  ];
+  late final List<Widget> _screens;
+
+  @override
+  void initState() {
+    super.initState();
+    _screens = [
+      UserHomeScreen(key: _homeKey),
+      const UserOrderHistoryScreen(),
+      const UserFavoriteScreen(),
+      const ProfileScreen(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +46,13 @@ class _UserMainScreenState extends State<UserMainScreen> {
         ),
         child: BottomNavigationBar(
           currentIndex: _currentIndex,
-          onTap: (index) => setState(() => _currentIndex = index),
+          onTap: (index) {
+            setState(() => _currentIndex = index);
+            // Reload promo state when switching back to Beranda
+            if (index == 0) {
+              _homeKey.currentState?.reloadPromoState();
+            }
+          },
           type: BottomNavigationBarType.fixed,
           selectedItemColor: const Color(0xFF1E3A8A),
           unselectedItemColor: const Color(0xFF94A3B8),

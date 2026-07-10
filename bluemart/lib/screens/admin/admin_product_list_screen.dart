@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/product.dart';
 import '../../services/product_service.dart';
-import '../../services/auth_service.dart';
 import '../../services/firestore_service.dart';
 import '../../widgets/product_card.dart';
 
@@ -14,7 +13,6 @@ class AdminProductListScreen extends StatefulWidget {
 
 class _AdminProductListScreenState extends State<AdminProductListScreen> {
   final _productService = ProductService();
-  final _authService = AuthService();
   final _searchController = TextEditingController();
   List<Product> _products = [];
   bool _isLoading = true;
@@ -24,7 +22,6 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
   @override
   void initState() {
     super.initState();
-    _checkAccess();
     _loadProducts();
   }
 
@@ -32,17 +29,6 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
-  }
-
-  Future<void> _checkAccess() async {
-    final isAdmin = await _authService.isAdmin();
-    if (!isAdmin && mounted) {
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/user-home',
-        (route) => false,
-      );
-    }
   }
 
   Future<void> _loadProducts() async {

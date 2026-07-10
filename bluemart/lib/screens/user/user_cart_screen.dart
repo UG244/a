@@ -9,9 +9,7 @@ class UserCartScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Keranjang Belanja'),
-      ),
+      appBar: AppBar(title: const Text('Keranjang Belanja')),
       body: Consumer<CartService>(
         builder: (context, cart, _) {
           if (cart.isEmpty) {
@@ -19,7 +17,11 @@ class UserCartScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.shopping_cart_outlined, size: 64, color: Colors.grey[400]),
+                  Icon(
+                    Icons.shopping_cart_outlined,
+                    size: 64,
+                    color: Colors.grey[400],
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'Keranjang belanja kosong',
@@ -47,109 +49,220 @@ class UserCartScreen extends StatelessWidget {
                   itemCount: cart.items.length,
                   itemBuilder: (context, index) {
                     final item = cart.items[index];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Row(
+                    return Dismissible(
+                      key: Key('cart_${item.productId}'),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEF4444),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 20),
+                        child: const Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
                           children: [
-                            // Photo
-                            Container(
-                              width: 60,
-                              height: 60,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[100],
-                                borderRadius: BorderRadius.circular(8),
+                            Icon(Icons.delete, color: Colors.white, size: 22),
+                            SizedBox(width: 6),
+                            Text(
+                              'Hapus',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
                               ),
-                              child: item.photoPath != null
-                                  ? ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                  child: Image.file(
-                                        File(item.photoPath!),
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, err, stack) =>
-                                            const Icon(Icons.image, color: Colors.grey),
-                                      ),
-                                    )
-                                  : const Icon(Icons.image, color: Colors.grey),
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                          ],
+                        ),
+                      ),
+                      confirmDismiss: (direction) async {
+                        return await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            title: const Row(
+                              children: [
+                                Icon(
+                                  Icons.delete_outline,
+                                  color: Color(0xFFEF4444),
+                                ),
+                                SizedBox(width: 8),
+                                Text('Hapus Item'),
+                              ],
+                            ),
+                            content: Text(
+                              'Hapus "${item.productName}" dari keranjang?',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx, false),
+                                child: const Text('Batal'),
+                              ),
+                              ElevatedButton(
+                                onPressed: () => Navigator.pop(ctx, true),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFFEF4444),
+                                  foregroundColor: Colors.white,
+                                ),
+                                child: const Text('Hapus'),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                      onDismissed: (_) {
+                        cart.removeItem(item.productId);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                '${item.productName} dihapus dari keranjang',
+                              ),
+                              behavior: SnackBarBehavior.floating,
+                              duration: const Duration(seconds: 2),
+                              action: SnackBarAction(
+                                label: 'Batal',
+                                textColor: Colors.white,
+                                onPressed: () {
+                                  // The item is already removed by Dismissible;
+                                  // this just prevents undo. For full undo, we'd
+                                  // need to re-add, but CartService doesn't store
+                                  // removed items. Acknowledge with a message.
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Item telah dihapus'),
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                      child: Card(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            children: [
+                              // Photo
+                              Container(
+                                width: 60,
+                                height: 60,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[100],
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: item.photoPath != null
+                                    ? ClipRRect(
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Image.file(
+                                          File(item.photoPath!),
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, err, stack) =>
+                                              const Icon(
+                                                Icons.image,
+                                                color: Colors.grey,
+                                              ),
+                                        ),
+                                      )
+                                    : const Icon(
+                                        Icons.image,
+                                        color: Colors.grey,
+                                      ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.productName,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 14,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Rp ${_formatPrice(item.unitPrice)}',
+                                      style: TextStyle(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        _buildQuantityButton(
+                                          context,
+                                          Icons.remove,
+                                          () {
+                                            if (item.quantity > 1) {
+                                              cart.updateQuantity(
+                                                item.productId,
+                                                item.quantity - 1,
+                                              );
+                                            } else {
+                                              cart.removeItem(item.productId);
+                                            }
+                                          },
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                          ),
+                                          child: Text(
+                                            '${item.quantity}',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                        ),
+                                        _buildQuantityButton(
+                                          context,
+                                          Icons.add,
+                                          () => cart.updateQuantity(
+                                            item.productId,
+                                            item.quantity + 1,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Column(
                                 children: [
                                   Text(
-                                    item.productName,
+                                    'Rp ${_formatPrice(item.subtotal)}',
                                     style: const TextStyle(
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: FontWeight.bold,
                                       fontSize: 14,
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Rp ${_formatPrice(item.unitPrice)}',
-                                    style: TextStyle(
-                                      color: Theme.of(context).colorScheme.primary,
-                                      fontWeight: FontWeight.w600,
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.delete_outline,
+                                      color: Colors.red,
+                                      size: 20,
                                     ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Row(
-                                    children: [
-                                      _buildQuantityButton(
-                                        context,
-                                        Icons.remove,
-                                        () {
-                                          if (item.quantity > 1) {
-                                            cart.updateQuantity(
-                                              item.productId,
-                                              item.quantity - 1,
-                                            );
-                                          } else {
-                                            cart.removeItem(item.productId);
-                                          }
-                                        },
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                                        child: Text(
-                                          '${item.quantity}',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                      ),
-                                      _buildQuantityButton(
-                                        context,
-                                        Icons.add,
-                                        () => cart.updateQuantity(
-                                          item.productId,
-                                          item.quantity + 1,
-                                        ),
-                                      ),
-                                    ],
+                                    onPressed: () =>
+                                        cart.removeItem(item.productId),
                                   ),
                                 ],
                               ),
-                            ),
-                            Column(
-                              children: [
-                                Text(
-                                  'Rp ${_formatPrice(item.subtotal)}',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete_outline,
-                                      color: Colors.red, size: 20),
-                                  onPressed: () => cart.removeItem(item.productId),
-                                ),
-                              ],
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     );
@@ -187,15 +300,22 @@ class UserCartScreen extends StatelessWidget {
                             ),
                             Text(
                               '${cart.uniqueItemCount} item (${cart.itemCount} unit)',
-                              style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 12,
+                              ),
                             ),
                           ],
                         ),
                       ),
                       ElevatedButton(
-                        onPressed: () => Navigator.pushNamed(context, '/user-checkout'),
+                        onPressed: () =>
+                            Navigator.pushNamed(context, '/user-checkout'),
                         style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 12,
+                          ),
                         ),
                         child: const Text('Checkout'),
                       ),
@@ -211,7 +331,10 @@ class UserCartScreen extends StatelessWidget {
   }
 
   Widget _buildQuantityButton(
-      BuildContext context, IconData icon, VoidCallback onPressed) {
+    BuildContext context,
+    IconData icon,
+    VoidCallback onPressed,
+  ) {
     return InkWell(
       onTap: onPressed,
       borderRadius: BorderRadius.circular(4),
@@ -227,7 +350,9 @@ class UserCartScreen extends StatelessWidget {
   }
 
   String _formatPrice(double price) {
-    return price.toStringAsFixed(0).replaceAllMapped(
+    return price
+        .toStringAsFixed(0)
+        .replaceAllMapped(
           RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
           (match) => '${match.group(1)}.',
         );

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/product.dart';
 import '../../services/product_service.dart';
 
@@ -15,6 +16,21 @@ class _UserFavoriteScreenState extends State<UserFavoriteScreen> {
   List<Product> _favoriteProducts = [];
   bool _isLoading = true;
 
+  static const String _favKey = 'favorite_product_ids';
+
+  /// Toggle favorite for a product (static)
+  static Future<void> toggleFavorite(int productId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final ids = prefs.getStringList(_favKey) ?? [];
+    final idStr = productId.toString();
+    if (ids.contains(idStr)) {
+      ids.remove(idStr);
+    } else {
+      ids.add(idStr);
+    }
+    await prefs.setStringList(_favKey, ids);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -23,34 +39,52 @@ class _UserFavoriteScreenState extends State<UserFavoriteScreen> {
 
   Future<void> _loadFavorites() async {
     setState(() => _isLoading = true);
-    final allProducts = await _productService.getActiveProducts();
-    if (mounted) {
-      setState(() {
-        _favoriteProducts = allProducts.take(3).toList();
-        _isLoading = false;
-      });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final ids = prefs.getStringList(_favKey) ?? [];
+      if (ids.isEmpty) {
+        if (mounted)
+          setState(() {
+            _favoriteProducts = [];
+            _isLoading = false;
+          });
+        return;
+      }
+
+      final allProducts = await _productService.getActiveProducts();
+      final favIds = ids.map(int.parse).toSet();
+      final favs = allProducts.where((p) => favIds.contains(p.id)).toList();
+
+      if (mounted) {
+        setState(() {
+          _favoriteProducts = favs;
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  void _removeFavorite(Product product) {
-    setState(() {
-      _favoriteProducts.remove(product);
-    });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${product.name} dihapus dari favorit'),
-        behavior: SnackBarBehavior.floating,
-        action: SnackBarAction(
-          label: 'Batal',
-          textColor: Colors.white,
-          onPressed: () {
-            setState(() {
-              _favoriteProducts.insert(0, product);
-            });
-          },
+  Future<void> _removeFavorite(Product product) async {
+    await toggleFavorite(product.id!);
+    _loadFavorites();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${product.name} dihapus dari favorit'),
+          behavior: SnackBarBehavior.floating,
+          action: SnackBarAction(
+            label: 'Batal',
+            textColor: Colors.white,
+            onPressed: () async {
+              await toggleFavorite(product.id!);
+              _loadFavorites();
+            },
+          ),
         ),
-      ),
-    );
+      );
+    }
   }
 
   @override
@@ -61,7 +95,7 @@ class _UserFavoriteScreenState extends State<UserFavoriteScreen> {
         actions: [
           if (_favoriteProducts.isNotEmpty)
             IconButton(
-              icon: const Icon(Icons.favorite_border),
+              icon: const Icon(Icons.delete_outline),
               onPressed: () {
                 showDialog(
                   context: context,
@@ -74,9 +108,11 @@ class _UserFavoriteScreenState extends State<UserFavoriteScreen> {
                         child: const Text('Batal'),
                       ),
                       TextButton(
-                        onPressed: () {
-                          setState(() => _favoriteProducts.clear());
+                        onPressed: () async {
+                          final prefs = await SharedPreferences.getInstance();
+                          await prefs.remove(_favKey);
                           Navigator.pop(ctx);
+                          _loadFavorites();
                         },
                         child: const Text(
                           'Hapus Semua',
@@ -105,9 +141,8 @@ class _UserFavoriteScreenState extends State<UserFavoriteScreen> {
                   mainAxisSpacing: 12,
                 ),
                 itemCount: _favoriteProducts.length,
-                itemBuilder: (context, index) {
-                  return _buildFavoriteCard(_favoriteProducts[index]);
-                },
+                itemBuilder: (context, index) =>
+                    _buildFavoriteCard(_favoriteProducts[index]),
               ),
             ),
     );
@@ -162,135 +197,144 @@ class _UserFavoriteScreenState extends State<UserFavoriteScreen> {
   Widget _buildFavoriteCard(Product product) {
     final isOutOfStock = product.stock <= 0;
     return Card(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Stack(
-              children: [
-                Container(
-                  width: double.infinity,
-                  color: const Color(0xFFF1F5F9),
-                  child:
-                      product.photoPath != null && product.photoPath!.isNotEmpty
-                      ? Image.file(
-                          File(product.photoPath!),
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, err, stack) => const Icon(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () =>
+            Navigator.pushNamed(context, '/user-detail', arguments: product.id),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Stack(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    color: const Color(0xFFF1F5F9),
+                    child:
+                        product.photoPath != null &&
+                            product.photoPath!.isNotEmpty
+                        ? Image.file(
+                            File(product.photoPath!),
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, err, stack) => const Icon(
+                              Icons.image,
+                              size: 48,
+                              color: Color(0xFF94A3B8),
+                            ),
+                          )
+                        : const Icon(
                             Icons.image,
                             size: 48,
                             color: Color(0xFF94A3B8),
                           ),
-                        )
-                      : const Icon(
-                          Icons.image,
-                          size: 48,
-                          color: Color(0xFF94A3B8),
-                        ),
-                ),
-                Positioned(
-                  top: 4,
-                  right: 4,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 4,
-                        ),
-                      ],
-                    ),
-                    child: IconButton(
-                      icon: const Icon(
-                        Icons.favorite,
-                        color: Color(0xFFEC4899),
+                  ),
+                  Positioned(
+                    top: 4,
+                    right: 4,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 4,
+                          ),
+                        ],
                       ),
-                      onPressed: () => _removeFavorite(product),
-                      iconSize: 20,
-                      constraints: const BoxConstraints(
-                        minWidth: 36,
-                        minHeight: 36,
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.favorite,
+                          color: Color(0xFFEC4899),
+                        ),
+                        onPressed: () => _removeFavorite(product),
+                        iconSize: 20,
+                        constraints: const BoxConstraints(
+                          minWidth: 36,
+                          minHeight: 36,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                if (isOutOfStock)
-                  Positioned.fill(
-                    child: Container(
-                      color: Colors.black.withValues(alpha: 0.4),
-                      child: const Center(
-                        child: Text(
-                          'HABIS',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                  if (isOutOfStock)
+                    Positioned.fill(
+                      child: Container(
+                        color: Colors.black.withValues(alpha: 0.4),
+                        child: const Center(
+                          child: Text(
+                            'HABIS',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  product.name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
+            Padding(
+              padding: const EdgeInsets.all(10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Rp ${_formatPrice(product.price)}',
-                  style: const TextStyle(
-                    color: Color(0xFF1E3A8A),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
+                  const SizedBox(height: 4),
+                  Text(
+                    'Rp ${_formatPrice(product.price)}',
+                    style: const TextStyle(
+                      color: Color(0xFF1E3A8A),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    if (product.stock < 5 && !isOutOfStock)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.orange[100],
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          'Sisa ${product.stock}',
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      if (product.stock < 5 && !isOutOfStock)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.orange[100],
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            'Sisa ${product.stock}',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.orange[700],
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        )
+                      else if (!isOutOfStock)
+                        Text(
+                          'Stok: ${product.stock}',
                           style: TextStyle(
                             fontSize: 10,
-                            color: Colors.orange[700],
-                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[600],
                           ),
                         ),
-                      )
-                    else if (!isOutOfStock)
-                      Text(
-                        'Stok: ${product.stock}',
-                        style: TextStyle(fontSize: 10, color: Colors.grey[600]),
-                      ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

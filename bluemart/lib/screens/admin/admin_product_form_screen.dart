@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../models/product.dart';
 import '../../services/product_service.dart';
-import '../../services/auth_service.dart';
 import '../../services/image_service.dart';
 import '../../services/firestore_service.dart';
 
@@ -21,26 +20,26 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
   final _priceController = TextEditingController();
   final _stockController = TextEditingController();
   final _productService = ProductService();
-  final _authService = AuthService();
   final _imageService = ImageService();
   Product? _existingProduct;
-  String _category = 'Makanan';
+  String _category = 'Laptop';
   String? _photoPath;
   bool _isSaving = false;
 
   final List<String> _categories = [
-    'Makanan',
-    'Minuman',
-    'Pakaian',
+    'Laptop',
+    'Smartphone',
+    'Audio',
+    'Gaming',
+    'Aksesoris',
+    'Storage',
     'Elektronik',
-    'Kesehatan',
     'Lainnya',
   ];
 
   @override
   void initState() {
     super.initState();
-    _checkAccess();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final args = ModalRoute.of(context)?.settings.arguments;
       if (args is Product) {
@@ -55,17 +54,6 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
         });
       }
     });
-  }
-
-  Future<void> _checkAccess() async {
-    final isAdmin = await _authService.isAdmin();
-    if (!isAdmin && mounted) {
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/user-home',
-        (route) => false,
-      );
-    }
   }
 
   @override
@@ -145,7 +133,6 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
         isActive: true,
       );
       await _productService.updateProduct(updated);
-      // Sync ke Firestore
       _syncToFirestore(updated);
     } else {
       final product = Product(
@@ -158,7 +145,6 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
         isActive: true,
       );
       final id = await _productService.createProduct(product);
-      // Sync ke Firestore
       _syncToFirestore(product.copyWith(id: id));
     }
 
@@ -306,7 +292,9 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
 
               // Category dropdown
               DropdownButtonFormField<String>(
-                value: _category,
+                value: _categories.contains(_category)
+                    ? _category
+                    : _categories.first,
                 decoration: const InputDecoration(
                   labelText: 'Kategori',
                   border: OutlineInputBorder(),

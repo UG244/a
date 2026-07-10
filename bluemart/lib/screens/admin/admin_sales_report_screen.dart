@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../services/transaction_service.dart';
-import '../../services/auth_service.dart';
 
 class AdminSalesReportScreen extends StatefulWidget {
   const AdminSalesReportScreen({super.key});
@@ -11,7 +10,6 @@ class AdminSalesReportScreen extends StatefulWidget {
 
 class _AdminSalesReportScreenState extends State<AdminSalesReportScreen> {
   final _transactionService = TransactionService();
-  final _authService = AuthService();
   List<Map<String, dynamic>> _transactions = [];
   Map<int, List<Map<String, dynamic>>> _transactionItems = {};
   bool _isLoading = true;
@@ -20,19 +18,7 @@ class _AdminSalesReportScreenState extends State<AdminSalesReportScreen> {
   @override
   void initState() {
     super.initState();
-    _checkAccess();
     _loadTransactions();
-  }
-
-  Future<void> _checkAccess() async {
-    final isAdmin = await _authService.isAdmin();
-    if (!isAdmin && mounted) {
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/user-home',
-        (route) => false,
-      );
-    }
   }
 
   Future<void> _loadTransactions() async {

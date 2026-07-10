@@ -1,8 +1,19 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+// Theme
+import 'theme/app_theme.dart';
+
+// Providers
+import 'providers/auth_provider.dart';
+import 'providers/product_provider.dart';
+
+// Services
 import 'services/auth_service.dart';
 import 'services/cart_service.dart';
+
+// Screens
 import 'screens/login_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/map_screen.dart';
@@ -26,7 +37,11 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(
     MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => CartService())],
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()..initSession()),
+        ChangeNotifierProvider(create: (_) => CartService()),
+        ChangeNotifierProvider(create: (_) => ProductProvider()),
+      ],
       child: const BlueMartApp(),
     ),
   );
@@ -40,173 +55,129 @@ class BlueMartApp extends StatelessWidget {
     return MaterialApp(
       title: 'BlueMart',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF1E3A8A),
-          primary: const Color(0xFF1E3A8A),
-          secondary: const Color(0xFF3B82F6),
-          tertiary: const Color(0xFF0EA5E9),
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFFF8FAFC),
-        appBarTheme: const AppBarTheme(
-          centerTitle: true,
-          elevation: 0,
-          backgroundColor: Color(0xFF1E3A8A),
-          foregroundColor: Colors.white,
-          titleTextStyle: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF1E3A8A),
-            foregroundColor: Colors.white,
-            elevation: 0,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-            textStyle: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        outlinedButtonTheme: OutlinedButtonThemeData(
-          style: OutlinedButton.styleFrom(
-            foregroundColor: const Color(0xFF1E3A8A),
-            side: const BorderSide(color: Color(0xFF1E3A8A)),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-          ),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: const Color(0xFFF1F5F9),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF1E3A8A), width: 2),
-          ),
-          errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFEF4444)),
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 14,
-          ),
-          prefixIconColor: const Color(0xFF94A3B8),
-        ),
-        cardTheme: CardThemeData(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
-            side: BorderSide(
-              color: const Color(0xFFE2E8F0).withValues(alpha: 0.5),
-            ),
-          ),
-          clipBehavior: Clip.antiAlias,
-          color: Colors.white,
-        ),
-        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-          backgroundColor: Colors.white,
-          selectedItemColor: Color(0xFF1E3A8A),
-          unselectedItemColor: Color(0xFF94A3B8),
-          type: BottomNavigationBarType.fixed,
-          elevation: 8,
-        ),
-        dividerTheme: const DividerThemeData(
-          color: Color(0xFFF1F5F9),
-          thickness: 1,
-        ),
-        chipTheme: ChipThemeData(
-          selectedColor: const Color(0xFF1E3A8A),
-          labelStyle: const TextStyle(fontSize: 13),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-        ),
-      ),
+      theme: AppTheme.lightTheme,
       home: const SplashScreen(),
       onGenerateRoute: (settings) {
+        final auth = context.read<AuthProvider>();
+
+        // ---- PUBLIC ROUTES ----
         switch (settings.name) {
           case '/login':
             return MaterialPageRoute(builder: (_) => const LoginScreen());
-          case '/admin-dashboard':
-            return MaterialPageRoute(
-              builder: (_) => const AdminDashboardScreen(),
-            );
-          case '/admin-products':
-            return MaterialPageRoute(
-              builder: (_) => const AdminProductListScreen(),
-            );
-          case '/admin-product-form':
-            return MaterialPageRoute(
-              builder: (_) => const AdminProductFormScreen(),
-            );
-          case '/admin-sales-report':
-            return MaterialPageRoute(
-              builder: (_) => const AdminSalesReportScreen(),
-            );
+
+          // ---- USER ROUTES (guard: must be logged in) ----
           case '/user-home':
+            if (!auth.guardUser()) {
+              return _redirectLogin();
+            }
             return MaterialPageRoute(builder: (_) => const UserMainScreen());
           case '/user-detail':
+            if (!auth.guardUser()) {
+              return _redirectLogin();
+            }
             final productId = settings.arguments as int?;
             return MaterialPageRoute(
               builder: (_) =>
                   UserProductDetailScreen(productId: productId ?? 0),
             );
           case '/user-cart':
+            if (!auth.guardUser()) {
+              return _redirectLogin();
+            }
             return MaterialPageRoute(builder: (_) => const UserCartScreen());
           case '/user-orders':
+            if (!auth.guardUser()) {
+              return _redirectLogin();
+            }
             return MaterialPageRoute(
               builder: (_) => const UserOrderHistoryScreen(),
             );
           case '/user-notifications':
+            if (!auth.guardUser()) {
+              return _redirectLogin();
+            }
             return MaterialPageRoute(
               builder: (_) => const UserNotificationScreen(),
             );
           case '/user-favorites':
+            if (!auth.guardUser()) {
+              return _redirectLogin();
+            }
             return MaterialPageRoute(
               builder: (_) => const UserFavoriteScreen(),
             );
           case '/user-checkout':
+            if (!auth.guardUser()) {
+              return _redirectLogin();
+            }
             return MaterialPageRoute(
               builder: (_) => const UserCheckoutScreen(),
             );
           case '/barcode-scanner':
+            if (!auth.guardUser()) {
+              return _redirectLogin();
+            }
             return MaterialPageRoute(
               builder: (_) => const BarcodeScannerScreen(),
             );
-          case '/admin-coupon':
+          case '/profile':
+            if (!auth.guardUser()) {
+              return _redirectLogin();
+            }
+            return MaterialPageRoute(builder: (_) => const ProfileScreen());
+          case '/map':
+            if (!auth.guardUser()) {
+              return _redirectLogin();
+            }
+            return MaterialPageRoute(builder: (_) => const MapScreen());
+
+          // ---- ADMIN ROUTES (guard: must be admin) ----
+          case '/admin-dashboard':
+            if (!auth.guardAdmin()) {
+              return _redirectLogin();
+            }
             return MaterialPageRoute(
-              builder: (_) => const AdminCouponScreen(),
+              builder: (_) => const AdminDashboardScreen(),
             );
+          case '/admin-products':
+            if (!auth.guardAdmin()) {
+              return _redirectLogin();
+            }
+            return MaterialPageRoute(
+              builder: (_) => const AdminProductListScreen(),
+            );
+          case '/admin-product-form':
+            if (!auth.guardAdmin()) {
+              return _redirectLogin();
+            }
+            return MaterialPageRoute(
+              builder: (_) => const AdminProductFormScreen(),
+            );
+          case '/admin-sales-report':
+            if (!auth.guardAdmin()) {
+              return _redirectLogin();
+            }
+            return MaterialPageRoute(
+              builder: (_) => const AdminSalesReportScreen(),
+            );
+          case '/admin-coupon':
+            if (!auth.guardAdmin()) {
+              return _redirectLogin();
+            }
+            return MaterialPageRoute(builder: (_) => const AdminCouponScreen());
           case '/admin-payment':
+            if (!auth.guardAdmin()) {
+              return _redirectLogin();
+            }
             return MaterialPageRoute(
               builder: (_) => const AdminPaymentScreen(),
             );
           case '/admin-qris':
-            return MaterialPageRoute(
-              builder: (_) => const AdminQrisScreen(),
-            );
-          case '/map':
-            return MaterialPageRoute(builder: (_) => const MapScreen());
-          case '/profile':
-            return MaterialPageRoute(builder: (_) => const ProfileScreen());
+            if (!auth.guardAdmin()) {
+              return _redirectLogin();
+            }
+            return MaterialPageRoute(builder: (_) => const AdminQrisScreen());
+
           default:
             return MaterialPageRoute(
               builder: (_) => const Scaffold(
@@ -217,8 +188,25 @@ class BlueMartApp extends StatelessWidget {
       },
     );
   }
+
+  /// Redirect to /login, clearing the navigation stack.
+  MaterialPageRoute _redirectLogin() {
+    return MaterialPageRoute(
+      builder: (ctx) {
+        // Schedule a push to /login after the current frame to avoid
+        // navigation during build. The guard itself already redirects.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Navigator.of(ctx).pushNamedAndRemoveUntil('/login', (route) => false);
+        });
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      },
+    );
+  }
 }
 
+// ============================================================
+// SPLASH SCREEN
+// ============================================================
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
@@ -228,7 +216,6 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
-  final AuthService _authService = AuthService();
   Timer? _timer;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -253,23 +240,31 @@ class _SplashScreenState extends State<SplashScreen>
 
   void _checkSession() {
     _timer = Timer(const Duration(milliseconds: 1500), () async {
-      final isLoggedIn = await _authService.isLoggedIn();
       if (!mounted) return;
-
-      if (isLoggedIn) {
-        final user = await _authService.getCurrentUser();
+      try {
+        final authService = AuthService();
+        final isLoggedIn = await authService.isLoggedIn();
         if (!mounted) return;
-        if (user != null) {
-          if (user.role == 'admin') {
-            Navigator.pushReplacementNamed(context, '/admin-dashboard');
+
+        if (isLoggedIn) {
+          final user = await authService.getCurrentUser();
+          if (!mounted) return;
+          if (user != null) {
+            if (user.role == 'admin') {
+              Navigator.pushReplacementNamed(context, '/admin-dashboard');
+            } else {
+              Navigator.pushReplacementNamed(context, '/user-home');
+            }
           } else {
-            Navigator.pushReplacementNamed(context, '/user-home');
+            Navigator.pushReplacementNamed(context, '/login');
           }
         } else {
           Navigator.pushReplacementNamed(context, '/login');
         }
-      } else {
-        Navigator.pushReplacementNamed(context, '/login');
+      } catch (_) {
+        if (mounted) {
+          Navigator.pushReplacementNamed(context, '/login');
+        }
       }
     });
   }

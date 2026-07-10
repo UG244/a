@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/product.dart';
 import '../../models/cart_item.dart';
 import '../../services/product_service.dart';
@@ -30,9 +31,12 @@ class _UserProductDetailScreenState extends State<UserProductDetailScreen> {
 
   Future<void> _loadProduct() async {
     final product = await _productService.getProductById(widget.productId);
+    final prefs = await SharedPreferences.getInstance();
+    final favIds = prefs.getStringList('favorite_product_ids') ?? [];
     if (mounted) {
       setState(() {
         _product = product;
+        _isFavorite = favIds.contains(widget.productId.toString());
         _isLoading = false;
       });
     }
@@ -78,6 +82,31 @@ class _UserProductDetailScreenState extends State<UserProductDetailScreen> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    final prefs = await SharedPreferences.getInstance();
+    final ids = prefs.getStringList('favorite_product_ids') ?? [];
+    final idStr = widget.productId.toString();
+    final newState = !_isFavorite;
+    if (newState) {
+      if (!ids.contains(idStr)) ids.add(idStr);
+    } else {
+      ids.remove(idStr);
+    }
+    await prefs.setStringList('favorite_product_ids', ids);
+    setState(() => _isFavorite = newState);
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            newState ? 'Ditambahkan ke favorit' : 'Dihapus dari favorit',
+          ),
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 1),
+        ),
+      );
     }
   }
 
@@ -142,7 +171,6 @@ class _UserProductDetailScreenState extends State<UserProductDetailScreen> {
                         ),
                       ),
                     ),
-                  // Gradient overlay
                   Positioned(
                     bottom: 0,
                     left: 0,
@@ -171,7 +199,6 @@ class _UserProductDetailScreenState extends State<UserProductDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Category badge
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,
@@ -191,7 +218,6 @@ class _UserProductDetailScreenState extends State<UserProductDetailScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  // Name & Favorite
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -212,25 +238,11 @@ class _UserProductDetailScreenState extends State<UserProductDetailScreen> {
                               ? const Color(0xFFEC4899)
                               : const Color(0xFF94A3B8),
                         ),
-                        onPressed: () {
-                          setState(() => _isFavorite = !_isFavorite);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                _isFavorite
-                                    ? 'Ditambahkan ke favorit'
-                                    : 'Dihapus dari favorit',
-                              ),
-                              behavior: SnackBarBehavior.floating,
-                              duration: const Duration(seconds: 1),
-                            ),
-                          );
-                        },
+                        onPressed: _toggleFavorite,
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  // Price
                   Row(
                     children: [
                       Text(
@@ -265,7 +277,6 @@ class _UserProductDetailScreenState extends State<UserProductDetailScreen> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  // Stock info
                   Row(
                     children: [
                       Icon(
@@ -293,7 +304,6 @@ class _UserProductDetailScreenState extends State<UserProductDetailScreen> {
                   const SizedBox(height: 24),
                   const Divider(),
                   const SizedBox(height: 16),
-                  // Description
                   const Text(
                     'Deskripsi Produk',
                     style: TextStyle(
@@ -337,7 +347,6 @@ class _UserProductDetailScreenState extends State<UserProductDetailScreen> {
                 top: false,
                 child: Row(
                   children: [
-                    // Quantity selector
                     Container(
                       decoration: BoxDecoration(
                         border: Border.all(color: const Color(0xFFE2E8F0)),
@@ -389,7 +398,6 @@ class _UserProductDetailScreenState extends State<UserProductDetailScreen> {
                       ),
                     ),
                     const SizedBox(width: 16),
-                    // Add to cart
                     Expanded(
                       child: SizedBox(
                         height: 52,

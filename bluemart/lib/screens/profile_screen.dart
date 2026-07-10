@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../database/db_helper.dart';
 import '../services/auth_service.dart';
+import '../services/cart_service.dart';
+import '../services/transaction_service.dart';
 import '../models/app_user.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -11,8 +16,13 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final _authService = AuthService();
+  final _dbHelper = DbHelper();
+  final _transactionService = TransactionService();
   AppUser? _user;
   bool _isLoading = true;
+  bool _promoVoucherEnabled = false;
+  int _orderCount = 0;
+  int _couponCount = 0;
 
   @override
   void initState() {
@@ -27,6 +37,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _user = user;
         _isLoading = false;
       });
+    }
+    _loadPromoPref();
+    _loadStats();
+  }
+
+  Future<void> _loadPromoPref() async {
+    final prefs = await SharedPreferences.getInstance();
+    final enabled = prefs.getBool('promo_voucher_enabled') ?? false;
+    if (mounted) {
+      setState(() => _promoVoucherEnabled = enabled);
+    }
+  }
+
+  Future<void> _loadStats() async {
+    try {
+      final user = await _authService.getCurrentUser();
+      if (user == null) return;
+      final orders = await _transactionService.getUserOrders(user.username);
+      final promos = await _dbHelper.getActivePromoCodes();
+      if (mounted) {
+        setState(() {
+          _orderCount = orders.length;
+          _couponCount = promos.length;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _togglePromoVoucher(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('promo_voucher_enabled', value);
+    if (mounted) {
+      setState(() => _promoVoucherEnabled = value);
     }
   }
 
@@ -75,11 +118,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     final isAdmin = _user?.role == 'admin';
+    final cart = context.watch<CartService>();
 
     return Scaffold(
       body: CustomScrollView(
         slivers: [
-          // Profile Header
           SliverAppBar(
             expandedHeight: 200,
             pinned: true,
@@ -98,7 +141,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 child: Stack(
                   children: [
-                    // Decorative circles
                     Positioned(
                       top: -30,
                       right: -30,
@@ -135,7 +177,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                     ),
-                    // Content
                     Positioned(
                       bottom: 20,
                       left: 20,
@@ -230,7 +271,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
 
-          // Stats Cards
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -240,7 +280,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: _buildStatCard(
                       icon: Icons.receipt_long,
                       label: 'Pesanan',
-                      value: '12 Aktif',
+                      value: '$_orderCount Aktif',
                       color: const Color(0xFF3B82F6),
                     ),
                   ),
@@ -249,7 +289,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: _buildStatCard(
                       icon: Icons.shopping_cart,
                       label: 'Keranjang',
-                      value: '3 Item',
+                      value: '${cart.uniqueItemCount} Item',
                       color: const Color(0xFFF97316),
                     ),
                   ),
@@ -258,7 +298,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: _buildStatCard(
                       icon: Icons.discount,
                       label: 'Kupon',
-                      value: '3 Tersedia',
+                      value: '$_couponCount Tersedia',
                       color: const Color(0xFF22C55E),
                     ),
                   ),
@@ -267,7 +307,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
 
-          // Menu Sections
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -288,14 +327,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     iconColor: const Color(0xFFF97316),
                     title: 'Buku Alamat Pengiriman',
                     subtitle: 'Atur alamat utama',
-                    onTap: () {},
+                    onTap: () => _showAddressDialog(),
                   ),
                   _buildMenuItem(
                     icon: Icons.qr_code_scanner,
                     iconColor: const Color(0xFF8B5CF6),
                     title: 'Metode Pembayaran QRIS',
                     subtitle: 'Scan QR saat checkout',
-                    onTap: () {},
+                    onTap: () => _showQrisInfo(),
                   ),
                   const SizedBox(height: 20),
                   _buildSectionTitle('Pengelola & Sistem'),
@@ -314,11 +353,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     iconColor: const Color(0xFF94A3B8),
                     title: 'Pusat Bantuan & FAQ',
                     subtitle: 'Butuh bantuan?',
-                    onTap: () {},
+                    onTap: () => _showFaqSheet(),
                   ),
                   const SizedBox(height: 24),
-
-                  // Logout
                   SizedBox(
                     width: double.infinity,
                     height: 50,
@@ -345,6 +382,283 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  void _showAddressDialog() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        height: MediaQuery.of(ctx).size.height * 0.6,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Buku Alamat',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(20),
+                children: [
+                  _buildAddressTile(
+                    'Rumah',
+                    'Jl. Sudirman No. 123, Denpasar',
+                    'John Doe',
+                    '+62 812-3456-7890',
+                    true,
+                  ),
+                  const SizedBox(height: 12),
+                  _buildAddressTile(
+                    'Kantor',
+                    'Jl. Imam Bonjol No. 456, Denpasar',
+                    'John Doe',
+                    '+62 813-9876-5432',
+                    false,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAddressTile(
+    String label,
+    String address,
+    String recipient,
+    String phone,
+    bool isDefault,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: const Color(0xFFEFF6FF),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              isDefault ? Icons.home : Icons.work,
+              color: const Color(0xFF3B82F6),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      label,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                    if (isDefault)
+                      Container(
+                        margin: const EdgeInsets.only(left: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF22C55E),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          'Utama',
+                          style: TextStyle(fontSize: 9, color: Colors.white),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '$recipient • $phone',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  address,
+                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showQrisInfo() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.qr_code, color: Color(0xFF06B6D4)),
+            SizedBox(width: 8),
+            Text('Pembayaran QRIS'),
+          ],
+        ),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.qr_code_2, size: 80, color: Color(0xFF06B6D4)),
+            SizedBox(height: 12),
+            Text(
+              'Anda dapat membayar menggunakan QRIS saat checkout.\n\n'
+              'Cukup pilih metode pembayaran QRIS, lalu scan kode QR yang muncul menggunakan aplikasi e-wallet Anda.',
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Tutup'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFaqSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        height: MediaQuery.of(ctx).size.height * 0.6,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Pusat Bantuan',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(20),
+                children: [
+                  _buildFaqItem(
+                    'Bagaimana cara memesan?',
+                    'Pilih produk, tambahkan ke keranjang, lalu lakukan checkout.',
+                  ),
+                  _buildFaqItem(
+                    'Metode pembayaran apa saja?',
+                    'QRIS, Transfer Bank BCA/Mandiri, DANA, OVO, dan COD.',
+                  ),
+                  _buildFaqItem(
+                    'Berapa lama pengiriman?',
+                    '2-3 hari kerja via JNE/J&T, atau hari yang sama via GoSend Instant.',
+                  ),
+                  _buildFaqItem(
+                    'Bagaimana cara retur barang?',
+                    'Hubungi customer service kami dalam 7 hari setelah barang diterima.',
+                  ),
+                  _buildFaqItem(
+                    'Apakah ada diskon?',
+                    'Aktifkan "Promo & Voucher" di Pengaturan untuk melihat promo yang tersedia.',
+                  ),
+                  _buildFaqItem(
+                    'Kontak Customer Service',
+                    'Email: support@bluemart.id\nWhatsApp: +62 811-1234-5678',
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFaqItem(String question, String answer) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            question,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+          ),
+          const SizedBox(height: 4),
+          Text(answer, style: TextStyle(fontSize: 13, color: Colors.grey[600])),
         ],
       ),
     );
@@ -474,7 +788,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ),
         child: Column(
           children: [
-            // Handle
             Container(
               margin: const EdgeInsets.only(top: 12),
               width: 40,
@@ -484,7 +797,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            // Header
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
               child: Row(
@@ -501,7 +813,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
-            // User info
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 20),
               padding: const EdgeInsets.all(14),
@@ -551,7 +862,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            // Settings sections
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -559,7 +869,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildSettingsSection('Notifikasi', [
                     _buildSettingsToggle('Push Notification', true),
                     _buildSettingsToggle('Update Pesanan', true),
-                    _buildSettingsToggle('Promo & Voucher', false),
+                    _buildSettingsToggle(
+                      'Promo & Voucher',
+                      _promoVoucherEnabled,
+                      onChanged: _togglePromoVoucher,
+                    ),
                   ]),
                   const SizedBox(height: 16),
                   _buildSettingsSection('Keamanan & Tampilan', [
@@ -623,7 +937,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildSettingsToggle(String label, bool value) {
+  Widget _buildSettingsToggle(
+    String label,
+    bool value, {
+    ValueChanged<bool>? onChanged,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
@@ -638,7 +956,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Switch(
             value: value,
             activeTrackColor: const Color(0xFF1E3A8A),
-            onChanged: (_) {},
+            onChanged: onChanged ?? (_) {},
           ),
         ],
       ),
