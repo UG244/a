@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'services/auth_service.dart';
@@ -110,7 +111,8 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  final _authService = AuthService();
+  final AuthService _authService = AuthService();
+  Timer? _timer;
 
   @override
   void initState() {
@@ -118,28 +120,33 @@ class _SplashScreenState extends State<SplashScreen> {
     _checkSession();
   }
 
-  Future<void> _checkSession() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    if (!mounted) return;
-    final isLoggedIn = await _authService.isLoggedIn();
-    if (!mounted) return;
-
-    if (isLoggedIn) {
-      final user = await _authService.getCurrentUser();
+  void _checkSession() {
+    _timer = Timer(const Duration(milliseconds: 500), () async {
+      final isLoggedIn = await _authService.isLoggedIn();
       if (!mounted) return;
-      if (user != null) {
-        if (user.role == 'admin') {
-          Navigator.pushReplacementNamed(context, '/admin-dashboard');
+
+      if (isLoggedIn) {
+        final user = await _authService.getCurrentUser();
+        if (!mounted) return;
+        if (user != null) {
+          if (user.role == 'admin') {
+            Navigator.pushReplacementNamed(context, '/admin-dashboard');
+          } else {
+            Navigator.pushReplacementNamed(context, '/user-home');
+          }
         } else {
-          Navigator.pushReplacementNamed(context, '/user-home');
+          Navigator.pushReplacementNamed(context, '/login');
         }
       } else {
         Navigator.pushReplacementNamed(context, '/login');
       }
-    } else {
-      Navigator.pushReplacementNamed(context, '/login');
-    }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   @override

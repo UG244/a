@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "315603477383",
+    "project_id": "retail-265f1",
+    "storage_bucket": "retail-265f1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:315603477383:android:2817314cee897792466922",
+        "android_client_info": {
+          "package_name": "com.example.bluemart"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDPUYSpCFmIavXM3He0RvHIHyUQ3Fs0M7s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:315603477383:android:81dfd237cee05043466922",
+        "android_client_info": {
+          "package_name": "com.example.piranti_bergerak"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDPUYSpCFmIavXM3He0RvHIHyUQ3Fs0M7s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": 1
+}
