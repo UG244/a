@@ -10,16 +10,20 @@ import 'screens/admin/admin_dashboard_screen.dart';
 import 'screens/admin/admin_product_list_screen.dart';
 import 'screens/admin/admin_product_form_screen.dart';
 import 'screens/admin/admin_sales_report_screen.dart';
-import 'screens/user/user_home_screen.dart';
+import 'screens/user/user_main_screen.dart';
 import 'screens/user/user_cart_screen.dart';
 import 'screens/user/user_checkout_screen.dart';
 import 'screens/user/user_order_history_screen.dart';
+import 'screens/user/user_notification_screen.dart';
+import 'screens/user/user_favorite_screen.dart';
+import 'screens/user/user_product_detail_screen.dart';
+import 'screens/user/barcode_scanner_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => CartService(),
+    MultiProvider(
+      providers: [ChangeNotifierProvider(create: (_) => CartService())],
       child: const BlueMartApp(),
     ),
   );
@@ -35,22 +39,109 @@ class BlueMartApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
+          seedColor: const Color(0xFF1E3A8A),
+          primary: const Color(0xFF1E3A8A),
+          secondary: const Color(0xFF3B82F6),
+          tertiary: const Color(0xFF0EA5E9),
           brightness: Brightness.light,
         ),
         useMaterial3: true,
+        scaffoldBackgroundColor: const Color(0xFFF8FAFC),
         appBarTheme: const AppBarTheme(
           centerTitle: true,
           elevation: 0,
+          backgroundColor: Color(0xFF1E3A8A),
+          foregroundColor: Colors.white,
+          titleTextStyle: TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF1E3A8A),
+            foregroundColor: Colors.white,
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+            textStyle: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: const Color(0xFF1E3A8A),
+            side: const BorderSide(color: Color(0xFF1E3A8A)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: const Color(0xFFF1F5F9),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFF1E3A8A), width: 2),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: Color(0xFFEF4444)),
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
+          prefixIconColor: const Color(0xFF94A3B8),
+        ),
+        cardTheme: CardThemeData(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: BorderSide(
+              color: const Color(0xFFE2E8F0).withValues(alpha: 0.5),
+            ),
+          ),
+          clipBehavior: Clip.antiAlias,
+          color: Colors.white,
+        ),
+        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+          backgroundColor: Colors.white,
+          selectedItemColor: Color(0xFF1E3A8A),
+          unselectedItemColor: Color(0xFF94A3B8),
+          type: BottomNavigationBarType.fixed,
+          elevation: 8,
+        ),
+        dividerTheme: const DividerThemeData(
+          color: Color(0xFFF1F5F9),
+          thickness: 1,
+        ),
+        chipTheme: ChipThemeData(
+          selectedColor: const Color(0xFF1E3A8A),
+          labelStyle: const TextStyle(fontSize: 13),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
         ),
       ),
       home: const SplashScreen(),
       onGenerateRoute: (settings) {
         switch (settings.name) {
           case '/login':
-            return MaterialPageRoute(
-              builder: (_) => const LoginScreen(),
-            );
+            return MaterialPageRoute(builder: (_) => const LoginScreen());
           case '/admin-dashboard':
             return MaterialPageRoute(
               builder: (_) => const AdminDashboardScreen(),
@@ -68,29 +159,39 @@ class BlueMartApp extends StatelessWidget {
               builder: (_) => const AdminSalesReportScreen(),
             );
           case '/user-home':
+            return MaterialPageRoute(builder: (_) => const UserMainScreen());
+          case '/user-detail':
+            final productId = settings.arguments as int?;
             return MaterialPageRoute(
-              builder: (_) => const UserHomeScreen(),
+              builder: (_) =>
+                  UserProductDetailScreen(productId: productId ?? 0),
             );
           case '/user-cart':
+            return MaterialPageRoute(builder: (_) => const UserCartScreen());
+          case '/user-orders':
             return MaterialPageRoute(
-              builder: (_) => const UserCartScreen(),
+              builder: (_) => const UserOrderHistoryScreen(),
+            );
+          case '/user-notifications':
+            return MaterialPageRoute(
+              builder: (_) => const UserNotificationScreen(),
+            );
+          case '/user-favorites':
+            return MaterialPageRoute(
+              builder: (_) => const UserFavoriteScreen(),
             );
           case '/user-checkout':
             return MaterialPageRoute(
               builder: (_) => const UserCheckoutScreen(),
             );
-          case '/user-orders':
+          case '/barcode-scanner':
             return MaterialPageRoute(
-              builder: (_) => const UserOrderHistoryScreen(),
+              builder: (_) => const BarcodeScannerScreen(),
             );
           case '/map':
-            return MaterialPageRoute(
-              builder: (_) => const MapScreen(),
-            );
+            return MaterialPageRoute(builder: (_) => const MapScreen());
           case '/profile':
-            return MaterialPageRoute(
-              builder: (_) => const ProfileScreen(),
-            );
+            return MaterialPageRoute(builder: (_) => const ProfileScreen());
           default:
             return MaterialPageRoute(
               builder: (_) => const Scaffold(
@@ -110,18 +211,33 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
   final AuthService _authService = AuthService();
   Timer? _timer;
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
     super.initState();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
+    );
+    _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.elasticOut),
+    );
+    _animationController.forward();
     _checkSession();
   }
 
   void _checkSession() {
-    _timer = Timer(const Duration(milliseconds: 500), () async {
+    _timer = Timer(const Duration(milliseconds: 1500), () async {
       final isLoggedIn = await _authService.isLoggedIn();
       if (!mounted) return;
 
@@ -146,32 +262,76 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    _animationController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.store,
-              size: 80,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'BlueMart',
-              style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6), Color(0xFF0EA5E9)],
+          ),
+        ),
+        child: Center(
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: ScaleTransition(
+              scale: _scaleAnimation,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: const Icon(
+                      Icons.store_rounded,
+                      size: 60,
+                      color: Colors.white,
+                    ),
                   ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'BlueMart',
+                    style: TextStyle(
+                      fontSize: 36,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Belanja Gadget & Elektronik',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white.withValues(alpha: 0.8),
+                      letterSpacing: 1,
+                    ),
+                  ),
+                  const SizedBox(height: 48),
+                  SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Colors.white.withValues(alpha: 0.8),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 24),
-            const CircularProgressIndicator(),
-          ],
+          ),
         ),
       ),
     );

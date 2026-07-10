@@ -1,6 +1,7 @@
 class Product {
   final int? id;
   final String name;
+  final String description;
   final String category;
   final double price;
   final int stock;
@@ -13,6 +14,7 @@ class Product {
   Product({
     this.id,
     required this.name,
+    this.description = '',
     required this.category,
     required this.price,
     required this.stock,
@@ -21,13 +23,14 @@ class Product {
     this.isActive = false,
     String? createdAt,
     String? updatedAt,
-  })  : createdAt = createdAt ?? DateTime.now().toIso8601String(),
-        updatedAt = updatedAt ?? DateTime.now().toIso8601String();
+  }) : createdAt = createdAt ?? DateTime.now().toIso8601String(),
+       updatedAt = updatedAt ?? DateTime.now().toIso8601String();
 
   Map<String, dynamic> toMap() {
     return {
       if (id != null) 'id': id,
       'name': name,
+      'description': description,
       'category': category,
       'price': price,
       'stock': stock,
@@ -43,6 +46,7 @@ class Product {
     return Product(
       id: map['id'] as int?,
       name: map['name'] as String,
+      description: (map['description'] as String?) ?? '',
       category: map['category'] as String,
       price: (map['price'] as num).toDouble(),
       stock: map['stock'] as int,
@@ -57,6 +61,7 @@ class Product {
   Product copyWith({
     int? id,
     String? name,
+    String? description,
     String? category,
     double? price,
     int? stock,
@@ -69,6 +74,7 @@ class Product {
     return Product(
       id: id ?? this.id,
       name: name ?? this.name,
+      description: description ?? this.description,
       category: category ?? this.category,
       price: price ?? this.price,
       stock: stock ?? this.stock,
