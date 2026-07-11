@@ -58,7 +58,12 @@ class _LoginScreenState extends State<LoginScreen>
 
     if (verified == true && mounted) {
       setState(() => _isLoading = true);
-      await _authService.login('user1', 'user123');
+      
+      final prefs = await SharedPreferences.getInstance();
+      final bUser = prefs.getString('biometric_username') ?? 'user1';
+      final bPass = prefs.getString('biometric_password') ?? 'user123';
+      
+      await _authService.login(bUser, bPass);
       final user = await _authService.getCurrentUser();
       if (!mounted) return;
       if (user != null) {

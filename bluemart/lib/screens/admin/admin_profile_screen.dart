@@ -21,6 +21,8 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
   AppUser? _user;
   bool _isLoading = true;
   bool _isBiometricEnabled = false;
+  bool _isBiometricSupported = true;
+  bool _isRealtimeNotificationEnabled = true;
 
   int _totalProducts = 0;
   int _totalTransactions = 0;
@@ -37,6 +39,8 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     final user = await _authService.getCurrentUser();
     final prefs = await SharedPreferences.getInstance();
     final bio = prefs.getBool('biometric_enabled') ?? false;
+    final realtime = prefs.getBool('realtime_notifications_enabled') ?? true;
+    final bioSupported = await BiometricService().hasFingerprintSupport();
 
     final products = await _productService.getAllProducts();
     final transactions = await _transactionService.getAllTransactions();
@@ -46,6 +50,8 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
       setState(() {
         _user = user;
         _isBiometricEnabled = bio;
+        _isBiometricSupported = bioSupported;
+        _isRealtimeNotificationEnabled = realtime;
         _totalProducts = products.length;
         _totalTransactions = transactions.length;
         _totalRevenue = revenue;
@@ -129,6 +135,8 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                   _buildSettingsToggle(
                     'Kunci Biometrik Admin (Fingerprint/Face ID)',
                     _isBiometricEnabled,
+                    isEnabled: _isBiometricSupported,
+                    subtitle: _isBiometricSupported ? null : 'Perangkat tidak mendukung atau belum ada sidik jari yang terdaftar.',
                     onChanged: (value) async {
                       final prefs = await SharedPreferences.getInstance();
                       if (value) {
@@ -139,11 +147,15 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                         );
                         if (confirmed) {
                           await prefs.setBool('biometric_enabled', true);
+                          await prefs.setString('biometric_username', _user?.username ?? 'admin');
+                          await prefs.setString('biometric_password', 'admin123');
                           setModalState(() => _isBiometricEnabled = true);
                           setState(() => _isBiometricEnabled = true);
                         }
                       } else {
                         await prefs.setBool('biometric_enabled', false);
+                        await prefs.remove('biometric_username');
+                        await prefs.remove('biometric_password');
                         setModalState(() => _isBiometricEnabled = false);
                         setState(() => _isBiometricEnabled = false);
                       }
@@ -152,8 +164,16 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                 ]),
                 const SizedBox(height: 16),
                 _buildSettingsSection('Pemberitahuan Sistem', [
-                  _buildSettingsToggle('Notifikasi Pesanan Masuk Real-time', true),
-                  _buildSettingsToggle('Suara Peringatan Stok Menipis', true),
+                  _buildSettingsToggle(
+                    'Notifikasi Pesanan Masuk Real-time', 
+                    _isRealtimeNotificationEnabled,
+                    onChanged: (value) async {
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.setBool('realtime_notifications_enabled', value);
+                      setModalState(() => _isRealtimeNotificationEnabled = value);
+                      setState(() => _isRealtimeNotificationEnabled = value);
+                    },
+                  ),
                 ]),
                 const SizedBox(height: 20),
               ],
@@ -577,6 +597,8 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
     String label,
     bool value, {
     Function(bool)? onChanged,
+    bool isEnabled = true,
+    String? subtitle,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -586,18 +608,33 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
         ),
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Expanded(
-            child: Text(
-              label, 
-              style: const TextStyle(fontSize: 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label, 
+                  style: TextStyle(
+                    fontSize: 14, 
+                    color: isEnabled ? Colors.black : Colors.grey,
+                  ),
+                ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle, 
+                    style: const TextStyle(fontSize: 11, color: Colors.red),
+                  ),
+                ],
+              ],
             ),
           ),
-          const SizedBox(width: 8),
           Switch(
             value: value,
             activeTrackColor: const Color(0xFF0F172A),
-            onChanged: onChanged != null ? (val) => onChanged(val) : (_) {},
+            onChanged: isEnabled && onChanged != null ? (val) => onChanged(val) : null,
           ),
         ],
       ),

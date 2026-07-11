@@ -28,6 +28,7 @@ dependencies:
   mobile_scanner: ^6.0.2
   qr_flutter: ^4.1.0
   local_auth: ^2.3.0
+  flutter_ringtone_player: ^4.0.0+4
 
 dev_dependencies:
   flutter_test:

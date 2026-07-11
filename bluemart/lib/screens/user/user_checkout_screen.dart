@@ -12,6 +12,8 @@ import '../../services/cart_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/transaction_service.dart';
 import '../../services/biometric_service.dart';
+import '../../services/notification_service.dart';
+import 'package:flutter_ringtone_player/flutter_ringtone_player.dart';
 import '../../database/db_helper.dart';
 import 'user_address_screen.dart';
 
@@ -1536,6 +1538,14 @@ class _UserCheckoutScreenState extends State<UserCheckoutScreen> {
 
         if (_success) {
           cart.clearCart();
+          // Simpan notifikasi
+          NotificationService().addNotification(
+            'Pembayaran Berhasil',
+            'Pesanan Anda telah dibayar dan sedang diproses.',
+            type: 'pesanan',
+          );
+          // Mainkan suara
+          FlutterRingtonePlayer().playNotification();
         }
       }
     } catch (e) {

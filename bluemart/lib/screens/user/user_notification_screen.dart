@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../services/notification_service.dart';
 
 class UserNotificationScreen extends StatefulWidget {
   const UserNotificationScreen({super.key});
@@ -11,12 +12,39 @@ class _UserNotificationScreenState extends State<UserNotificationScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final List<_NotificationItem> _allNotifications = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _generateSampleNotifications();
+    _loadNotifications();
+  }
+
+  Future<void> _loadNotifications() async {
+    setState(() => _isLoading = true);
+    final service = NotificationService();
+    final data = await service.getNotifications();
+    
+    _allNotifications.clear();
+    for (var notif in data) {
+      _allNotifications.add(_NotificationItem(
+        icon: notif['type'] == 'promo' ? Icons.discount : Icons.payment,
+        iconColor: notif['type'] == 'promo' ? const Color(0xFFF97316) : const Color(0xFF22C55E),
+        title: notif['title'] ?? '',
+        message: notif['message'] ?? '',
+        time: DateTime.parse(notif['timestamp']),
+        type: notif['type'] ?? 'pesanan',
+        isRead: notif['isRead'] ?? false,
+      ));
+    }
+    
+    // Fallback if empty (keep dummy data for preview)
+    if (_allNotifications.isEmpty) {
+      _generateSampleNotifications();
+    }
+    
+    setState(() => _isLoading = false);
   }
 
   void _generateSampleNotifications() {
@@ -39,43 +67,6 @@ class _UserNotificationScreenState extends State<UserNotificationScreen>
         time: now.subtract(const Duration(hours: 1)),
         type: 'promo',
         isRead: false,
-      ),
-      _NotificationItem(
-        icon: Icons.check_circle,
-        iconColor: const Color(0xFF22C55E),
-        title: 'Pesanan Selesai',
-        message: 'Terima kasih sudah berbelanja. Pesanan #456 telah selesai.',
-        time: now.subtract(const Duration(days: 1)),
-        type: 'pesanan',
-        isRead: true,
-      ),
-      _NotificationItem(
-        icon: Icons.payment,
-        iconColor: const Color(0xFF8B5CF6),
-        title: 'Pembayaran Diterima',
-        message: 'Pembayaran untuk pesanan #789 telah dikonfirmasi.',
-        time: now.subtract(const Duration(days: 2)),
-        type: 'pesanan',
-        isRead: true,
-      ),
-      _NotificationItem(
-        icon: Icons.redeem,
-        iconColor: const Color(0xFFEC4899),
-        title: 'Voucher Baru',
-        message:
-            'Dapatkan voucher belanja Rp50.000 untuk pembelian minimal Rp500.000',
-        time: now.subtract(const Duration(days: 3)),
-        type: 'promo',
-        isRead: true,
-      ),
-      _NotificationItem(
-        icon: Icons.store,
-        iconColor: const Color(0xFF1E3A8A),
-        title: 'Produk Baru Tersedia',
-        message: 'Produk-produk gadget terbaru sudah hadir di BlueMart!',
-        time: now.subtract(const Duration(days: 5)),
-        type: 'promo',
-        isRead: true,
       ),
     ]);
   }
@@ -113,6 +104,9 @@ class _UserNotificationScreenState extends State<UserNotificationScreen>
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
     return Scaffold(
       appBar: AppBar(
         title: const Text('Notifikasi'),

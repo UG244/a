@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/auth_service.dart';
 import '../../services/product_service.dart';
 import '../../services/transaction_service.dart';
@@ -18,6 +20,104 @@ class AdminDashboardScreen extends StatefulWidget {
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   int _currentNavIndex = 0;
+  
+  Timer? _pollingTimer;
+  int _pendingOrdersCount = 0;
+  final TransactionService _transactionService = TransactionService();
+
+  @override
+  void initState() {
+    super.initState();
+    _checkInitialPendingOrders();
+  }
+
+  Future<void> _checkInitialPendingOrders() async {
+    try {
+      final transactions = await _transactionService.getAllTransactions();
+      final pendingCount = transactions.where((t) {
+        final status = t['status']?.toString().toLowerCase() ?? '';
+        return status != 'selesai' && status != 'dibatalkan';
+      }).length;
+      
+      if (pendingCount > 0 && mounted) {
+        setState(() => _pendingOrdersCount = pendingCount);
+        _showNewOrderPopup(pendingCount);
+      }
+      
+      _startPolling();
+    } catch (e) {
+      // Abaikan error
+    }
+  }
+
+  void _startPolling() {
+    _pollingTimer = Timer.periodic(const Duration(seconds: 5), (timer) async {
+      if (!mounted) return;
+      try {
+        final transactions = await _transactionService.getAllTransactions();
+        final currentPendingCount = transactions.where((t) {
+          final status = t['status']?.toString().toLowerCase() ?? '';
+          return status != 'selesai' && status != 'dibatalkan';
+        }).length;
+        
+        if (currentPendingCount > _pendingOrdersCount) {
+          final diff = currentPendingCount - _pendingOrdersCount;
+          setState(() => _pendingOrdersCount = currentPendingCount);
+          
+          _showNewOrderPopup(diff);
+        } else if (currentPendingCount != _pendingOrdersCount) {
+          setState(() => _pendingOrdersCount = currentPendingCount);
+        }
+      } catch (e) {
+        // Abaikan error
+      }
+    });
+  }
+
+  void _showNewOrderPopup(int count) async {
+    if (!mounted) return;
+    
+    // Cek apakah notifikasi diaktifkan di pengaturan
+    final prefs = await SharedPreferences.getInstance();
+    final isEnabled = prefs.getBool('realtime_notifications_enabled') ?? true;
+    
+    if (!isEnabled || !mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.notifications_active, color: Colors.blue),
+            SizedBox(width: 8),
+            Text('Pesanan Baru!'),
+          ],
+        ),
+        content: Text('Ada $count pesanan baru yang masuk dan menunggu konfirmasi.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Tutup'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              setState(() => _currentNavIndex = 3); // Arahkan ke tab Pesanan
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E3A8A)),
+            child: const Text('Lihat Pesanan', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pollingTimer?.cancel();
+    super.dispose();
+  }
 
   final List<Widget> _screens = [
     const _AdminDashboardContent(),
@@ -51,28 +151,38 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           elevation: 0,
           selectedFontSize: 10,
           unselectedFontSize: 10,
-          items: const [
-            BottomNavigationBarItem(
+          items: [
+            const BottomNavigationBarItem(
               icon: Icon(Icons.dashboard_outlined),
               activeIcon: Icon(Icons.dashboard),
               label: 'Dashboard',
             ),
-            BottomNavigationBarItem(
+            const BottomNavigationBarItem(
               icon: Icon(Icons.discount_outlined),
               activeIcon: Icon(Icons.discount),
               label: 'Kupon',
             ),
-            BottomNavigationBarItem(
+            const BottomNavigationBarItem(
               icon: Icon(Icons.payment_outlined),
               activeIcon: Icon(Icons.payment),
               label: 'Pembayaran',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.receipt_long_outlined),
-              activeIcon: Icon(Icons.receipt_long),
+              icon: _pendingOrdersCount > 0 
+                  ? Badge(
+                      label: Text('$_pendingOrdersCount'),
+                      child: const Icon(Icons.receipt_long_outlined),
+                    )
+                  : const Icon(Icons.receipt_long_outlined),
+              activeIcon: _pendingOrdersCount > 0
+                  ? Badge(
+                      label: Text('$_pendingOrdersCount'),
+                      child: const Icon(Icons.receipt_long),
+                    )
+                  : const Icon(Icons.receipt_long),
               label: 'Pesanan',
             ),
-            BottomNavigationBarItem(
+            const BottomNavigationBarItem(
               icon: Icon(Icons.qr_code_outlined),
               activeIcon: Icon(Icons.qr_code),
               label: 'QRIS',
@@ -103,6 +213,7 @@ class _AdminDashboardContentState extends State<_AdminDashboardContent> {
   List<Product> _recentProducts = [];
   bool _isLoading = true;
   String _username = '';
+
   @override
   void initState() {
     super.initState();
@@ -153,13 +264,18 @@ class _AdminDashboardContentState extends State<_AdminDashboardContent> {
           _totalStock = results[1] as int;
           _lowStockCount = results[2] as int;
           _totalRevenue = results[3] as double;
-          _totalTransactions = (results[4] as List).length;
+        
+          final allTransactions = results[4] as List<dynamic>;
+          _totalTransactions = allTransactions.length;
+          
           _recentProducts = results[5] as List<Product>;
           _isLoading = false;
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 

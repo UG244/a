@@ -23,6 +23,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   AppUser? _user;
   bool _isLoading = true;
   bool _isBiometricEnabled = false;
+  bool _isBiometricSupported = true;
   bool _isPromoVoucherEnabled = false;
 
   int _orderCount = 0;
@@ -40,7 +41,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     final user = await _authService.getCurrentUser();
     final prefs = await SharedPreferences.getInstance();
     final bio = prefs.getBool('biometric_enabled') ?? false;
-    final pv = prefs.getBool('promo_voucher_enabled') ?? false;
+    final promo = prefs.getBool('promo_voucher_enabled') ?? false;
+    final bioSupported = await BiometricService().hasFingerprintSupport();
 
     int orders = 0;
     int cartItems = 0;
@@ -59,7 +61,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       setState(() {
         _user = user;
         _isBiometricEnabled = bio;
-        _isPromoVoucherEnabled = pv;
+        _isBiometricSupported = bioSupported;
+        _isPromoVoucherEnabled = promo;
         _orderCount = orders;
         _cartItemCount = cartItems;
         _activeCouponCount = coupons;
@@ -162,6 +165,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   _buildSettingsToggle(
                     'Kunci Biometrik (Sidik Jari/Face ID)',
                     _isBiometricEnabled,
+                    isEnabled: _isBiometricSupported,
+                    subtitle: _isBiometricSupported ? null : 'Perangkat tidak mendukung atau belum ada sidik jari yang terdaftar.',
                     onChanged: (value) async {
                       final prefs = await SharedPreferences.getInstance();
                       if (value) {
@@ -172,11 +177,15 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         );
                         if (confirmed) {
                           await prefs.setBool('biometric_enabled', true);
+                          await prefs.setString('biometric_username', _user?.username ?? 'user1');
+                          await prefs.setString('biometric_password', 'user123');
                           setModalState(() => _isBiometricEnabled = true);
                           setState(() => _isBiometricEnabled = true);
                         }
                       } else {
                         await prefs.setBool('biometric_enabled', false);
+                        await prefs.remove('biometric_username');
+                        await prefs.remove('biometric_password');
                         setModalState(() => _isBiometricEnabled = false);
                         setState(() => _isBiometricEnabled = false);
                       }
@@ -687,6 +696,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     String label,
     bool value, {
     Function(bool)? onChanged,
+    bool isEnabled = true,
+    String? subtitle,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -698,11 +709,31 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(fontSize: 14)),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label, 
+                  style: TextStyle(
+                    fontSize: 14, 
+                    color: isEnabled ? Colors.black : Colors.grey,
+                  ),
+                ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle, 
+                    style: const TextStyle(fontSize: 11, color: Colors.red),
+                  ),
+                ],
+              ],
+            ),
+          ),
           Switch(
             value: value,
             activeTrackColor: const Color(0xFF1E3A8A),
-            onChanged: onChanged != null ? (val) => onChanged(val) : (_) {},
+            onChanged: isEnabled && onChanged != null ? (val) => onChanged(val) : null,
           ),
         ],
       ),
