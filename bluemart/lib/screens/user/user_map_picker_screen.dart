@@ -21,7 +21,8 @@ class _UserMapPickerScreenState extends State<UserMapPickerScreen> {
   @override
   void initState() {
     super.initState();
-    _checkLocation();
+    // Use default location, uncomment _checkLocation() to auto-fetch on open
+    // _checkLocation();
   }
 
   Future<void> _checkLocation() async {

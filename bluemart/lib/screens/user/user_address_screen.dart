@@ -1,7 +1,4 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:http/http.dart' as http;
 import 'user_map_picker_screen.dart';
 import '../../models/checkout_address.dart';
 
@@ -14,7 +11,7 @@ class UserAddressScreen extends StatefulWidget {
 }
 
 class _UserAddressScreenState extends State<UserAddressScreen> {
-  final List<CheckoutAddress> _addresses = [
+  static final List<CheckoutAddress> _addresses = [
     CheckoutAddress(
       id: 1,
       label: 'Rumah',
@@ -46,24 +43,34 @@ class _UserAddressScreenState extends State<UserAddressScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pilih Alamat'),
-        actions: [
-          TextButton.icon(
-            onPressed: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const UserMapPickerScreen()),
-              );
-              if (result != null && result is String) {
-                if (mounted) _showAddAddressDialog(prefilledAddress: result);
-              }
-            },
-            icon: const Icon(Icons.add, size: 18),
-            label: const Text('Tambah'),
-          ),
-        ],
       ),
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0, top: 8.0, bottom: 4.0),
+            child: TextButton.icon(
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const UserMapPickerScreen()),
+                );
+                if (result != null && result is String) {
+                  if (mounted) _showAddAddressDialog(prefilledAddress: result);
+                }
+              },
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Tambah Alamat'),
+              style: TextButton.styleFrom(
+                foregroundColor: const Color(0xFF1E3A8A),
+                backgroundColor: const Color(0xFFEFF6FF),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ),
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
@@ -164,7 +171,7 @@ class _UserAddressScreenState extends State<UserAddressScreen> {
                                   fontSize: 12,
                                   color: Colors.grey[500],
                                 ),
-                                maxLines: 1,
+                                maxLines: 3,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ],
@@ -286,6 +293,13 @@ class _UserAddressScreenState extends State<UserAddressScreen> {
                   _selectedId = newAddress.id;
                 });
                 Navigator.pop(context);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Harap lengkapi semua kolom form'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
               }
             },
             child: const Text('Simpan'),
