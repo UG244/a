@@ -252,18 +252,22 @@ class _UserAddressScreenState extends State<UserAddressScreen> {
                     hintText: 'Rumah/Kantor',
                   ),
                 ),
+                const SizedBox(height: 16),
                 TextField(
                   controller: recipientController,
                   decoration: const InputDecoration(labelText: 'Nama Penerima'),
                 ),
+                const SizedBox(height: 16),
                 TextField(
                   controller: addressController,
                   decoration: const InputDecoration(labelText: 'Alamat Lengkap (Dapat Diedit)'),
                   maxLines: 3,
                 ),
+                const SizedBox(height: 16),
                 TextField(
                   controller: phoneController,
                   decoration: const InputDecoration(labelText: 'Nomor Telepon'),
+                  keyboardType: TextInputType.phone,
                 ),
               ],
             ),
