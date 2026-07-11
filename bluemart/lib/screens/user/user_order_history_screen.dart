@@ -626,15 +626,19 @@ class _UserOrderHistoryScreenState extends State<UserOrderHistoryScreen> {
                         children: [
                           const Icon(Icons.person, size: 14, color: Color(0xFF64748B)),
                           const SizedBox(width: 4),
-                          Text(
-                            'Pembeli: ${order['buyerUsername']}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF64748B),
+                          Expanded(
+                            child: Text(
+                              'Pembeli: ${order['buyerUsername']}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF64748B),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          const Spacer(),
+                          const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(

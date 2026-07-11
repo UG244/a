@@ -224,7 +224,7 @@ class _AdminSalesReportScreenState extends State<AdminSalesReportScreen> {
           children: [
             Icon(Icons.verified, color: Color(0xFF1E3A8A)),
             SizedBox(width: 8),
-            Text('Konfirmasi Update Status'),
+            Expanded(child: Text('Konfirmasi Update Status')),
           ],
         ),
         content: Text('Ubah status pesanan menjadi "$newStatus"?'),

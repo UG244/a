@@ -63,7 +63,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
           children: [
             Icon(Icons.logout, color: Color(0xFFEF4444)),
             SizedBox(width: 8),
-            Text('Konfirmasi Logout Admin'),
+            Expanded(child: Text('Konfirmasi Logout Admin')),
           ],
         ),
         content: const Text('Apakah Anda yakin ingin keluar dari panel pengelola BlueMart?'),
@@ -173,7 +173,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
           children: [
             Icon(Icons.help_center, color: Color(0xFF0F172A)),
             SizedBox(width: 8),
-            Text('Panduan Pengelola Toko'),
+            Expanded(child: Text('Panduan Pengelola Toko')),
           ],
         ),
         content: const Column(
@@ -395,24 +395,7 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Dashboard Navigation Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton.icon(
-                      onPressed: () => Navigator.pushNamed(context, '/admin-dashboard'),
-                      icon: const Icon(Icons.dashboard, color: Colors.white),
-                      label: const Text(
-                        'Kembali ke Dasbor Utama Admin',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0F172A),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
+
 
                   // Logout Button
                   SizedBox(
@@ -603,9 +586,14 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
         ),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(fontSize: 14)),
+          Expanded(
+            child: Text(
+              label, 
+              style: const TextStyle(fontSize: 14),
+            ),
+          ),
+          const SizedBox(width: 8),
           Switch(
             value: value,
             activeTrackColor: const Color(0xFF0F172A),

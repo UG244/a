@@ -4,6 +4,10 @@ import '../../services/product_service.dart';
 import '../../services/transaction_service.dart';
 import '../../models/product.dart';
 import '../../utils/constants.dart';
+import 'admin_coupon_screen.dart';
+import 'admin_payment_screen.dart';
+import 'admin_qris_screen.dart';
+import '../user/user_order_history_screen.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
@@ -13,6 +17,81 @@ class AdminDashboardScreen extends StatefulWidget {
 }
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
+  int _currentNavIndex = 0;
+
+  final List<Widget> _screens = [
+    const _AdminDashboardContent(),
+    const AdminCouponScreen(),
+    const AdminPaymentScreen(),
+    const UserOrderHistoryScreen(),
+    const AdminQrisScreen(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: IndexedStack(index: _currentNavIndex, children: _screens),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 16,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentNavIndex,
+          onTap: (index) => setState(() => _currentNavIndex = index),
+          type: BottomNavigationBarType.fixed,
+          selectedItemColor: const Color(0xFF1E3A8A),
+          unselectedItemColor: const Color(0xFF94A3B8),
+          backgroundColor: Colors.white,
+          elevation: 0,
+          selectedFontSize: 10,
+          unselectedFontSize: 10,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.dashboard_outlined),
+              activeIcon: Icon(Icons.dashboard),
+              label: 'Dashboard',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.discount_outlined),
+              activeIcon: Icon(Icons.discount),
+              label: 'Kupon',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.payment_outlined),
+              activeIcon: Icon(Icons.payment),
+              label: 'Pembayaran',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.receipt_long_outlined),
+              activeIcon: Icon(Icons.receipt_long),
+              label: 'Pesanan',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.qr_code_outlined),
+              activeIcon: Icon(Icons.qr_code),
+              label: 'QRIS',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AdminDashboardContent extends StatefulWidget {
+  const _AdminDashboardContent();
+
+  @override
+  State<_AdminDashboardContent> createState() => _AdminDashboardContentState();
+}
+
+class _AdminDashboardContentState extends State<_AdminDashboardContent> {
   final _authService = AuthService();
   final _productService = ProductService();
   final _transactionService = TransactionService();
@@ -24,8 +103,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   List<Product> _recentProducts = [];
   bool _isLoading = true;
   String _username = '';
-  int _currentNavIndex = 0;
-
   @override
   void initState() {
     super.initState();
@@ -91,12 +168,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard Admin'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.person),
-            onPressed: () => Navigator.pushNamed(context, '/profile'),
-          ),
-        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -266,13 +337,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
+                  GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: 4,
+                    mainAxisSpacing: 10,
+                    crossAxisSpacing: 10,
+                    childAspectRatio: 0.8,
                     children: [
                       _buildQuickAction(
                         icon: Icons.add_box,
-                        label: 'Tambah Produk',
+                        label: 'Tambah\nProduk',
                         color: const Color(0xFF3B82F6),
                         onTap: () async {
                           final result = await Navigator.pushNamed(
@@ -285,7 +360,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       ),
                       _buildQuickAction(
                         icon: Icons.list_alt,
-                        label: 'Lihat Produk',
+                        label: 'Lihat\nProduk',
                         color: const Color(0xFF22C55E),
                         onTap: () async {
                           await Navigator.pushNamed(
@@ -297,7 +372,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       ),
                       _buildQuickAction(
                         icon: Icons.receipt,
-                        label: 'Laporan',
+                        label: 'Laporan\nPenjualan',
                         color: const Color(0xFF8B5CF6),
                         onTap: () => Navigator.pushNamed(
                           context,
@@ -306,7 +381,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       ),
                       _buildQuickAction(
                         icon: Icons.discount,
-                        label: 'Kupon Diskon',
+                        label: 'Kupon\nDiskon',
                         color: const Color(0xFFF97316),
                         onTap: () => Navigator.pushNamed(
                           context,
@@ -315,7 +390,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       ),
                       _buildQuickAction(
                         icon: Icons.payment,
-                        label: 'Pembayaran',
+                        label: 'Metode\nPembayaran',
                         color: const Color(0xFFEC4899),
                         onTap: () => Navigator.pushNamed(
                           context,
@@ -324,7 +399,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       ),
                       _buildQuickAction(
                         icon: Icons.qr_code,
-                        label: 'QRIS',
+                        label: 'Set\nQRIS',
                         color: const Color(0xFF06B6D4),
                         onTap: () => Navigator.pushNamed(
                           context,
@@ -333,7 +408,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       ),
                       _buildQuickAction(
                         icon: Icons.history,
-                        label: 'Riwayat',
+                        label: 'Riwayat\nPesanan',
                         color: const Color(0xFF6366F1),
                         onTap: () => Navigator.pushNamed(
                           context,
@@ -427,75 +502,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 ],
               ),
             ),
-      // Bottom Navigation Bar for quick access
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 16,
-              offset: const Offset(0, -4),
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _currentNavIndex,
-          onTap: (index) {
-            setState(() => _currentNavIndex = index);
-            switch (index) {
-              case 0:
-                // Already on dashboard
-                break;
-              case 1:
-                Navigator.pushNamed(context, '/admin-products');
-                break;
-              case 2:
-                Navigator.pushNamed(context, '/admin-coupon');
-                break;
-              case 3:
-                Navigator.pushNamed(context, '/admin-qris');
-                break;
-              case 4:
-                Navigator.pushNamed(context, '/admin-sales-report');
-                break;
-            }
-          },
-          type: BottomNavigationBarType.fixed,
-          selectedItemColor: const Color(0xFF1E3A8A),
-          unselectedItemColor: const Color(0xFF94A3B8),
-          backgroundColor: Colors.white,
-          elevation: 0,
-          selectedFontSize: 10,
-          unselectedFontSize: 10,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.dashboard_outlined),
-              activeIcon: Icon(Icons.dashboard),
-              label: 'Dashboard',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.inventory_2_outlined),
-              activeIcon: Icon(Icons.inventory_2),
-              label: 'Produk',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.discount_outlined),
-              activeIcon: Icon(Icons.discount),
-              label: 'Kupon',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.qr_code_outlined),
-              activeIcon: Icon(Icons.qr_code),
-              label: 'QRIS',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.bar_chart_outlined),
-              activeIcon: Icon(Icons.bar_chart),
-              label: 'Laporan',
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -550,42 +556,43 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     required Color color,
     required VoidCallback onTap,
   }) {
-    return SizedBox(
-      width: (MediaQuery.of(context).size.width - 16 * 2 - 10 * 3) / 4,
-      child: Card(
-        elevation: 1,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(icon, size: 22, color: color),
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(height: 6),
-                Text(
+                child: Icon(icon, size: 20, color: color),
+              ),
+              const SizedBox(height: 6),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
                   label,
                   textAlign: TextAlign.center,
                   maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,
+                    height: 1.1,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

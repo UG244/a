@@ -128,6 +128,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
 
   Future<void> _loadProducts() async {
     setState(() => _isLoading = true);
+    await _productService.seedData(); // Seed data if empty
     final products = await _productService.getActiveProducts();
     if (mounted) {
       setState(() {
@@ -818,6 +819,41 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                         ),
                       ),
                     ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Material(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      shape: const CircleBorder(),
+                      elevation: 2,
+                      child: InkWell(
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Row(
+                                children: [
+                                  const Icon(Icons.favorite, color: Colors.white, size: 18),
+                                  const SizedBox(width: 8),
+                                  Expanded(child: Text('${product.name} disimpan ke Favorit')),
+                                ],
+                              ),
+                              backgroundColor: const Color(0xFFEF4444),
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        },
+                        customBorder: const CircleBorder(),
+                        child: const Padding(
+                          padding: EdgeInsets.all(6),
+                          child: Icon(Icons.favorite_border, size: 18, color: Color(0xFFEF4444)),
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
