@@ -220,7 +220,7 @@ Penugasan anggota kelompok disusun berdasarkan kompetensi dan spesialisasi masin
 | No | Nama | NIM | Area Tanggung Jawab |
 |:---:|:---|:---|:---|
 | 1 | **Fiji Firmanda** | 240040099 | **Sistem Notifikasi** — Implementasi notification service layer, helper functions, dan integrasi antar komponen UI. Mengembangkan sistem real-time notification dengan tab filtering, badge management, dan read/unread status tracking. |
-| 2 | **Kadek Novan S. Chandra** | 240040107 | **Layanan Peta & Lokasi** — Pengembangan map screen dengan OpenStreetMap integration, address selection dengan geolocation support, dan lokasi supplier management. Bertanggung jawab atas struktur project dan organisasi file. |
+| 2 | **Kadek Novan Suhaliem Chandra** | 240040107 | **Layanan Peta & Lokasi** — Pengembangan map screen dengan OpenStreetMap integration, address selection dengan geolocation support, dan lokasi supplier management. Bertanggung jawab atas struktur project dan organisasi file. |
 | 3 | **I Gede Sandi Pujanta** | 240040129 | **Sensor & Database** — Implementasi SensorService (magnetometer compass dan accelerometer shake detection), fondasi screens untuk User dan Admin flows, sistem checkout lengkap dengan payment/shipping integration, serta desain dan implementasi database schema dengan operasi CRUD. |
 
 ---
