@@ -31,12 +31,12 @@ class CheckoutAddress {
 
   factory CheckoutAddress.fromMap(Map<String, dynamic> map) {
     return CheckoutAddress(
-      id: map['id'] as int?,
-      label: map['label'] as String,
-      fullAddress: map['fullAddress'] as String,
-      recipient: map['recipient'] as String,
-      phone: map['phone'] as String,
-      isDefault: (map['isDefault'] as int?) == 1,
+      id: (map['id'] as num?)?.toInt(),
+      label: map['label'] as String? ?? '',
+      fullAddress: map['fullAddress'] as String? ?? '',
+      recipient: map['recipient'] as String? ?? '',
+      phone: map['phone'] as String? ?? '',
+      isDefault: map['isDefault'] == 1 || map['isDefault'] == true || map['isDefault'] == 'true',
       userId: map['userId'] as String?,
     );
   }

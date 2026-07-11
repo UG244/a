@@ -61,7 +61,7 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
-            onPressed: () {},
+            onPressed: _showAddPaymentDialog,
           ),
         ],
       ),
@@ -119,6 +119,61 @@ class _AdminPaymentScreenState extends State<AdminPaymentScreen> {
           activeTrackColor: const Color(0xFF22C55E).withValues(alpha: 0.5),
           activeThumbColor: const Color(0xFF22C55E),
         ),
+      ),
+    );
+  }
+
+  void _showAddPaymentDialog() {
+    final nameController = TextEditingController();
+    final descController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Tambah Metode Pembayaran'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Nama Metode (mis. Bank BRI VA)',
+                ),
+              ),
+              TextField(
+                controller: descController,
+                decoration: const InputDecoration(
+                  labelText: 'Deskripsi (mis. Virtual Account)',
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (nameController.text.isNotEmpty) {
+                setState(() {
+                  _paymentMethods.add({
+                    'name': nameController.text.trim(),
+                    'icon': Icons.account_balance,
+                    'color': const Color(0xFF0066AE),
+                    'status': true,
+                    'desc': descController.text.trim().isEmpty
+                        ? 'Transfer Virtual Account'
+                        : descController.text.trim(),
+                  });
+                });
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Simpan'),
+          ),
+        ],
       ),
     );
   }

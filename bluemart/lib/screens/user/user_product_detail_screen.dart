@@ -59,7 +59,7 @@ class _UserProductDetailScreenState extends State<UserProductDetailScreen> {
               children: [
                 const Icon(Icons.check_circle, color: Colors.white, size: 18),
                 const SizedBox(width: 8),
-                Text('${_product!.name} ditambahkan ke keranjang'),
+                Text('${_product!.name} added to cart'),
               ],
             ),
             backgroundColor: const Color(0xFF22C55E),
@@ -72,7 +72,35 @@ class _UserProductDetailScreenState extends State<UserProductDetailScreen> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Stok tidak mencukupi'),
+            content: Text('Stock not available'),
+            backgroundColor: Color(0xFFEF4444),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  void _directCheckout() {
+    if (_product == null) return;
+    final cart = context.read<CartService>();
+    final success = cart.addItem(
+      CartItem(
+        productId: _product!.id!,
+        productName: _product!.name,
+        unitPrice: _product!.price,
+        quantity: _quantity,
+        photoPath: _product!.photoPath,
+      ),
+      _product!.stock,
+    );
+    if (mounted) {
+      if (success) {
+        Navigator.pushNamed(context, '/user-checkout');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Stock not available'),
             backgroundColor: Color(0xFFEF4444),
             behavior: SnackBarBehavior.floating,
           ),
@@ -389,7 +417,7 @@ class _UserProductDetailScreenState extends State<UserProductDetailScreen> {
                       ),
                     ),
                     const SizedBox(width: 16),
-                    // Add to cart
+                    // Add to cart button
                     Expanded(
                       child: SizedBox(
                         height: 52,
@@ -397,12 +425,31 @@ class _UserProductDetailScreenState extends State<UserProductDetailScreen> {
                           onPressed: _addToCart,
                           icon: const Icon(Icons.shopping_cart_outlined),
                           label: Text(
-                            'Tambah ke Keranjang • Rp ${_formatPrice(p.price * _quantity)}',
+                            'Add to cart • Rp ${_formatPrice(p.price * _quantity)}',
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Direct checkout button
+                    SizedBox(
+                      height: 52,
+                      child: ElevatedButton.icon(
+                        onPressed: _directCheckout,
+                        icon: const Icon(Icons.flash_on),
+                        label: const Text(
+                          'Checkout',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF22C55E),
                         ),
                       ),
                     ),

@@ -21,6 +21,9 @@ import 'screens/user/user_notification_screen.dart';
 import 'screens/user/user_favorite_screen.dart';
 import 'screens/user/user_product_detail_screen.dart';
 import 'screens/user/barcode_scanner_screen.dart';
+import 'screens/user/user_address_screen.dart';
+import 'screens/user/user_profile_screen.dart';
+import 'screens/admin/admin_profile_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -175,6 +178,8 @@ class BlueMartApp extends StatelessWidget {
             return MaterialPageRoute(
               builder: (_) => const UserOrderHistoryScreen(),
             );
+          case '/user-address':
+            return MaterialPageRoute(builder: (_) => const UserAddressScreen());
           case '/user-notifications':
             return MaterialPageRoute(
               builder: (_) => const UserNotificationScreen(),
@@ -192,19 +197,19 @@ class BlueMartApp extends StatelessWidget {
               builder: (_) => const BarcodeScannerScreen(),
             );
           case '/admin-coupon':
-            return MaterialPageRoute(
-              builder: (_) => const AdminCouponScreen(),
-            );
+            return MaterialPageRoute(builder: (_) => const AdminCouponScreen());
           case '/admin-payment':
             return MaterialPageRoute(
               builder: (_) => const AdminPaymentScreen(),
             );
           case '/admin-qris':
-            return MaterialPageRoute(
-              builder: (_) => const AdminQrisScreen(),
-            );
+            return MaterialPageRoute(builder: (_) => const AdminQrisScreen());
           case '/map':
             return MaterialPageRoute(builder: (_) => const MapScreen());
+          case '/user-profile':
+            return MaterialPageRoute(builder: (_) => const UserProfileScreen());
+          case '/admin-profile':
+            return MaterialPageRoute(builder: (_) => const AdminProfileScreen());
           case '/profile':
             return MaterialPageRoute(builder: (_) => const ProfileScreen());
           default:

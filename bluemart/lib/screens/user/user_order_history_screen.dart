@@ -14,6 +14,7 @@ class _UserOrderHistoryScreenState extends State<UserOrderHistoryScreen> {
   final _authService = AuthService();
   List<Map<String, dynamic>> _orders = [];
   bool _isLoading = true;
+  bool _isAdmin = false;
   String _selectedStatus = 'Semua';
 
   final List<String> _statuses = [
@@ -35,9 +36,13 @@ class _UserOrderHistoryScreenState extends State<UserOrderHistoryScreen> {
     setState(() => _isLoading = true);
     final user = await _authService.getCurrentUser();
     if (user != null) {
-      final orders = await _transactionService.getUserOrders(user.username);
+      final isAdmin = (user.role == 'admin' || user.username == 'admin');
+      final orders = isAdmin
+          ? await _transactionService.getAllTransactions()
+          : await _transactionService.getUserOrders(user.username);
       if (mounted) {
         setState(() {
+          _isAdmin = isAdmin;
           _orders = orders;
           _isLoading = false;
         });
@@ -47,20 +52,42 @@ class _UserOrderHistoryScreenState extends State<UserOrderHistoryScreen> {
     }
   }
 
+  Future<void> _updateOrderStatus(int orderId, String newStatus) async {
+    await _transactionService.updateTransactionStatus(orderId, newStatus);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Status pesanan #$orderId berhasil diubah menjadi "$newStatus"'),
+        backgroundColor: const Color(0xFF22C55E),
+      ),
+    );
+    _loadOrders();
+  }
+
+  bool _statusMatches(String? orderStatus, String selectedStatus) {
+    if (orderStatus == null) return false;
+    final s = orderStatus.toLowerCase();
+    final sel = selectedStatus.toLowerCase();
+    if (sel == 'semua') return true;
+    if (sel == 'menunggu') return s == 'menunggu' || s == 'pending';
+    if (sel == 'diproses') return s == 'diproses' || s == 'processing';
+    if (sel == 'dikirim') return s == 'dikirim' || s == 'shipped';
+    if (sel == 'selesai') return s == 'selesai' || s == 'completed';
+    if (sel == 'dibatalkan') return s == 'dibatalkan' || s == 'cancelled';
+    return s == sel;
+  }
+
   List<Map<String, dynamic>> get _filteredOrders {
     if (_selectedStatus == 'Semua') return _orders;
     return _orders
-        .where(
-          (o) =>
-              (o['status'] as String?)?.toLowerCase() ==
-              _selectedStatus.toLowerCase(),
-        )
+        .where((o) => _statusMatches(o['status'] as String?, _selectedStatus))
         .toList();
   }
 
   Map<String, dynamic> _getStatusConfig(String? status) {
     switch (status?.toLowerCase()) {
       case 'menunggu':
+      case 'pending':
         return {
           'icon': Icons.pending,
           'color': const Color(0xFFEAB308),
@@ -68,6 +95,7 @@ class _UserOrderHistoryScreenState extends State<UserOrderHistoryScreen> {
           'label': 'Menunggu Pembayaran',
         };
       case 'diproses':
+      case 'processing':
         return {
           'icon': Icons.inventory_2,
           'color': const Color(0xFF3B82F6),
@@ -75,6 +103,7 @@ class _UserOrderHistoryScreenState extends State<UserOrderHistoryScreen> {
           'label': 'Diproses',
         };
       case 'dikirim':
+      case 'shipped':
         return {
           'icon': Icons.local_shipping,
           'color': const Color(0xFFF97316),
@@ -82,6 +111,7 @@ class _UserOrderHistoryScreenState extends State<UserOrderHistoryScreen> {
           'label': 'Dikirim',
         };
       case 'selesai':
+      case 'completed':
         return {
           'icon': Icons.check_circle,
           'color': const Color(0xFF22C55E),
@@ -89,6 +119,7 @@ class _UserOrderHistoryScreenState extends State<UserOrderHistoryScreen> {
           'label': 'Selesai',
         };
       case 'dibatalkan':
+      case 'cancelled':
         return {
           'icon': Icons.cancel,
           'color': const Color(0xFFEF4444),
@@ -273,6 +304,70 @@ class _UserOrderHistoryScreenState extends State<UserOrderHistoryScreen> {
               ),
               const SizedBox(height: 16),
               _buildTimeline(order['status'] as String?),
+              if (_isAdmin) ...[
+                const Divider(height: 32),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEFF6FF),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFF3B82F6), width: 1.5),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.admin_panel_settings, color: Color(0xFF1E3A8A)),
+                          SizedBox(width: 8),
+                          Text(
+                            'Admin: Update Status Pesanan',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E3A8A),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      const Text(
+                        'Pilih status baru untuk pesanan ini:',
+                        style: TextStyle(fontSize: 13, color: Color(0xFF475569)),
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: ['menunggu', 'diproses', 'dikirim', 'selesai', 'dibatalkan'].map((statusOption) {
+                          final isCurrent = (order['status'] as String?)?.toLowerCase() == statusOption;
+                          final cfg = _getStatusConfig(statusOption);
+                          return ChoiceChip(
+                            label: Text(cfg['label'] as String),
+                            selected: isCurrent,
+                            selectedColor: cfg['color'] as Color,
+                            labelStyle: TextStyle(
+                              color: isCurrent ? Colors.white : (cfg['color'] as Color),
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                            ),
+                            backgroundColor: cfg['bg'] as Color,
+                            onSelected: isCurrent
+                                ? null
+                                : (selected) async {
+                                    if (selected) {
+                                      await _updateOrderStatus(order['id'] as int, statusOption);
+                                      if (mounted) Navigator.pop(context);
+                                    }
+                                  },
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
@@ -487,6 +582,46 @@ class _UserOrderHistoryScreenState extends State<UserOrderHistoryScreen> {
                         ),
                       ],
                     ),
+                    if (_isAdmin && order['buyerUsername'] != null) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Icon(Icons.person, size: 14, color: Color(0xFF64748B)),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Pembeli: ${order['buyerUsername']}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEFF6FF),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: const Color(0xFF3B82F6)),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(Icons.edit, size: 11, color: Color(0xFF1E3A8A)),
+                                SizedBox(width: 3),
+                                Text(
+                                  'Update Status',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF1E3A8A),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -572,14 +707,19 @@ class _UserOrderHistoryScreenState extends State<UserOrderHistoryScreen> {
   int _getStatusIndex(String? status) {
     switch (status?.toLowerCase()) {
       case 'dibatalkan':
+      case 'cancelled':
         return -1;
       case 'menunggu':
+      case 'pending':
         return 0;
       case 'diproses':
+      case 'processing':
         return 1;
       case 'dikirim':
+      case 'shipped':
         return 2;
       case 'selesai':
+      case 'completed':
         return 4;
       default:
         return 0;

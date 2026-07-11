@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 class AdminQrisScreen extends StatefulWidget {
   const AdminQrisScreen({super.key});
@@ -10,6 +11,7 @@ class AdminQrisScreen extends StatefulWidget {
 class _AdminQrisScreenState extends State<AdminQrisScreen> {
   double _nominal = 0;
   final _nominalController = TextEditingController();
+  String? _generatedQrData;
 
   @override
   void dispose() {
@@ -17,12 +19,23 @@ class _AdminQrisScreenState extends State<AdminQrisScreen> {
     super.dispose();
   }
 
+  void _generateQRIS() {
+    setState(() {
+      _nominal = double.tryParse(_nominalController.text) ?? 0;
+      if (_nominal > 0) {
+        // Generate QRIS data string (simplified format)
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        _generatedQrData = 'BLUEMART|${_nominal.toInt()}|$timestamp|QRIS';
+      } else {
+        _generatedQrData = null;
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pembayaran QRIS'),
-      ),
+      appBar: AppBar(title: const Text('Pembayaran QRIS')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -54,10 +67,7 @@ class _AdminQrisScreenState extends State<AdminQrisScreen> {
                 const SizedBox(height: 16),
                 const Text(
                   'BlueMart QRIS',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -65,35 +75,48 @@ class _AdminQrisScreenState extends State<AdminQrisScreen> {
                   style: TextStyle(color: Colors.grey[600], fontSize: 13),
                 ),
                 const SizedBox(height: 20),
-                // QR Code placeholder
+                // QR Code
                 Container(
                   width: 200,
                   height: 200,
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey[200]!),
-                  ),
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.qr_code_2,
-                          size: 100,
-                          color: Colors.grey[400],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'QRIS Code',
-                          style: TextStyle(
-                            color: Colors.grey[500],
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
+                    border: Border.all(
+                      color: const Color(0xFF06B6D4).withValues(alpha: 0.3),
                     ),
                   ),
+                  child: _generatedQrData != null
+                      ? Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: QrImageView(
+                            data: _generatedQrData!,
+                            version: QrVersions.auto,
+                            size: 168,
+                            backgroundColor: Colors.white,
+                            foregroundColor: const Color(0xFF1E3A8A),
+                          ),
+                        )
+                      : Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.qr_code_2,
+                                size: 100,
+                                color: Colors.grey[400],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'QRIS Code',
+                                style: TextStyle(
+                                  color: Colors.grey[500],
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -115,10 +138,7 @@ class _AdminQrisScreenState extends State<AdminQrisScreen> {
                 children: [
                   const Text(
                     'Atur Nominal Pembayaran',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 12),
                   TextField(
@@ -151,6 +171,20 @@ class _AdminQrisScreenState extends State<AdminQrisScreen> {
                       _buildQuickNominal(200000),
                       _buildQuickNominal(500000),
                     ],
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: _generateQRIS,
+                      icon: const Icon(Icons.qr_code),
+                      label: const Text('Generate QRIS'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF06B6D4),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -225,9 +259,7 @@ class _AdminQrisScreenState extends State<AdminQrisScreen> {
               : Colors.grey[100],
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected
-                ? const Color(0xFF06B6D4)
-                : Colors.transparent,
+            color: isSelected ? const Color(0xFF06B6D4) : Colors.transparent,
           ),
         ),
         child: Text(
@@ -235,9 +267,7 @@ class _AdminQrisScreenState extends State<AdminQrisScreen> {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: isSelected
-                ? const Color(0xFF06B6D4)
-                : Colors.grey[700],
+            color: isSelected ? const Color(0xFF06B6D4) : Colors.grey[700],
           ),
         ),
       ),
@@ -266,10 +296,7 @@ class _AdminQrisScreenState extends State<AdminQrisScreen> {
               const SizedBox(height: 2),
               Text(
                 amount,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
             ],
           ),

@@ -1,7 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/product.dart';
+import '../../models/cart_item.dart';
 import '../../services/product_service.dart';
+import '../../services/cart_service.dart';
 
 class UserFavoriteScreen extends StatefulWidget {
   const UserFavoriteScreen({super.key});
@@ -14,6 +17,76 @@ class _UserFavoriteScreenState extends State<UserFavoriteScreen> {
   final _productService = ProductService();
   List<Product> _favoriteProducts = [];
   bool _isLoading = true;
+
+  void _addToCart(Product product) {
+    final cart = context.read<CartService>();
+    final success = cart.addItem(
+      CartItem(
+        productId: product.id!,
+        productName: product.name,
+        unitPrice: product.price,
+        quantity: 1,
+        photoPath: product.photoPath,
+      ),
+      product.stock,
+    );
+    if (mounted) {
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white, size: 18),
+                const SizedBox(width: 8),
+                Text('${product.name} added to cart'),
+              ],
+            ),
+            backgroundColor: const Color(0xFF22C55E),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Stock not available'),
+            backgroundColor: Color(0xFFEF4444),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  void _directCheckout(Product product) {
+    final cart = context.read<CartService>();
+    final success = cart.addItem(
+      CartItem(
+        productId: product.id!,
+        productName: product.name,
+        unitPrice: product.price,
+        quantity: 1,
+        photoPath: product.photoPath,
+      ),
+      product.stock,
+    );
+    if (mounted) {
+      if (success) {
+        Navigator.pushNamed(context, '/user-checkout');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Stock not available'),
+            backgroundColor: Color(0xFFEF4444),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -259,34 +332,48 @@ class _UserFavoriteScreenState extends State<UserFavoriteScreen> {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Row(
-                  children: [
-                    if (product.stock < 5 && !isOutOfStock)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.orange[100],
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          'Sisa ${product.stock}',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: Colors.orange[700],
-                            fontWeight: FontWeight.w600,
+                if (!isOutOfStock) ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 32,
+                          child: ElevatedButton.icon(
+                            onPressed: () => _addToCart(product),
+                            icon: const Icon(
+                              Icons.shopping_cart_outlined,
+                              size: 14,
+                            ),
+                            label: const Text(
+                              'Add to cart',
+                              style: TextStyle(fontSize: 10),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF1E3A8A),
+                              padding: EdgeInsets.zero,
+                            ),
                           ),
                         ),
-                      )
-                    else if (!isOutOfStock)
-                      Text(
-                        'Stok: ${product.stock}',
-                        style: TextStyle(fontSize: 10, color: Colors.grey[600]),
                       ),
-                  ],
-                ),
+                      const SizedBox(width: 4),
+                      SizedBox(
+                        height: 32,
+                        child: ElevatedButton.icon(
+                          onPressed: () => _directCheckout(product),
+                          icon: const Icon(Icons.flash_on, size: 12),
+                          label: const Text(
+                            'Checkout',
+                            style: TextStyle(fontSize: 10),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF22C55E),
+                            padding: EdgeInsets.zero,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),

@@ -241,8 +241,16 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
   Widget _buildFilterChip(String label, String value) {
     final isSelected = _filter == value;
     return FilterChip(
-      label: Text(label),
+      label: Text(
+        label,
+        style: TextStyle(
+          color: isSelected ? Colors.white : const Color(0xFF0F172A),
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+        ),
+      ),
       selected: isSelected,
+      selectedColor: const Color(0xFF1E3A8A),
+      checkmarkColor: Colors.white,
       onSelected: (selected) {
         setState(() => _filter = value);
       },

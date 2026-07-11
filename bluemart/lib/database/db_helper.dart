@@ -21,7 +21,7 @@ class DbHelper {
 
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
@@ -95,6 +95,22 @@ class DbHelper {
         FOREIGN KEY (productId) REFERENCES products(id)
       )
     ''');
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS coupons (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        code TEXT NOT NULL UNIQUE,
+        discount TEXT NOT NULL,
+        discountPercent REAL DEFAULT 0,
+        minPurchase REAL NOT NULL,
+        freeShipping INTEGER NOT NULL DEFAULT 0,
+        expiry TEXT NOT NULL,
+        uses INTEGER DEFAULT 0,
+        maxUses INTEGER DEFAULT 100,
+        isActive INTEGER NOT NULL DEFAULT 1,
+        createdAt TEXT NOT NULL
+      )
+    ''');
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -107,6 +123,25 @@ class DbHelper {
       } catch (_) {
         // Column might already exist
       }
+    }
+    if (oldVersion < 3) {
+      try {
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS coupons (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            code TEXT NOT NULL UNIQUE,
+            discount TEXT NOT NULL,
+            discountPercent REAL DEFAULT 0,
+            minPurchase REAL NOT NULL,
+            freeShipping INTEGER NOT NULL DEFAULT 0,
+            expiry TEXT NOT NULL,
+            uses INTEGER DEFAULT 0,
+            maxUses INTEGER DEFAULT 100,
+            isActive INTEGER NOT NULL DEFAULT 1,
+            createdAt TEXT NOT NULL
+          )
+        ''');
+      } catch (_) {}
     }
   }
 
@@ -262,6 +297,16 @@ class DbHelper {
     return (result.first['total'] as num).toDouble();
   }
 
+  Future<int> updateTransactionStatus(int transactionId, String status) async {
+    final db = await database;
+    return await db.update(
+      'transactions',
+      {'status': status},
+      where: 'id = ?',
+      whereArgs: [transactionId],
+    );
+  }
+
   // Mendapatkan produk dengan stok paling sedikit
   Future<List<Product>> getLowStockProducts({int threshold = 5}) async {
     final db = await database;
@@ -272,6 +317,157 @@ class DbHelper {
       orderBy: 'stock ASC',
     );
     return maps.map((map) => Product.fromMap(map)).toList();
+  }
+
+  // ==================== COUPON METHODS ====================
+
+  Future<void> _ensureCouponsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS coupons (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        code TEXT NOT NULL UNIQUE,
+        discount TEXT NOT NULL,
+        discountPercent REAL DEFAULT 0,
+        minPurchase REAL NOT NULL,
+        freeShipping INTEGER NOT NULL DEFAULT 0,
+        expiry TEXT NOT NULL,
+        uses INTEGER DEFAULT 0,
+        maxUses INTEGER DEFAULT 100,
+        isActive INTEGER NOT NULL DEFAULT 1,
+        createdAt TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _insertDefaultCoupons(Database db) async {
+    final now = DateTime.now().toIso8601String();
+    final defaults = [
+      {
+        'code': 'HEMAT10',
+        'discount': '10%',
+        'discountPercent': 0.10,
+        'minPurchase': 100000.0,
+        'freeShipping': 0,
+        'expiry': '31 Des 2026',
+        'uses': 45,
+        'maxUses': 100,
+        'isActive': 1,
+        'createdAt': now,
+      },
+      {
+        'code': 'BARU20',
+        'discount': '20%',
+        'discountPercent': 0.20,
+        'minPurchase': 200000.0,
+        'freeShipping': 0,
+        'expiry': '30 Nov 2026',
+        'uses': 12,
+        'maxUses': 50,
+        'isActive': 1,
+        'createdAt': now,
+      },
+      {
+        'code': 'GRATISONGKIR',
+        'discount': 'Gratis Ongkir',
+        'discountPercent': 0.0,
+        'minPurchase': 150000.0,
+        'freeShipping': 1,
+        'expiry': '31 Des 2026',
+        'uses': 78,
+        'maxUses': 200,
+        'isActive': 1,
+        'createdAt': now,
+      },
+      {
+        'code': 'FLASH50',
+        'discount': '50%',
+        'discountPercent': 0.50,
+        'minPurchase': 500000.0,
+        'freeShipping': 0,
+        'expiry': '31 Des 2026',
+        'uses': 30,
+        'maxUses': 50,
+        'isActive': 1,
+        'createdAt': now,
+      },
+      {
+        'code': 'FREESHIP',
+        'discount': 'Gratis Ongkir',
+        'discountPercent': 0.0,
+        'minPurchase': 200000.0,
+        'freeShipping': 1,
+        'expiry': '31 Des 2026',
+        'uses': 10,
+        'maxUses': 100,
+        'isActive': 1,
+        'createdAt': now,
+      },
+    ];
+    for (var coupon in defaults) {
+      await db.insert('coupons', coupon, conflictAlgorithm: ConflictAlgorithm.ignore);
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getAllCoupons() async {
+    final db = await database;
+    await _ensureCouponsTable(db);
+    final maps = await db.query('coupons', orderBy: 'id ASC');
+    if (maps.isEmpty) {
+      await _insertDefaultCoupons(db);
+      return await db.query('coupons', orderBy: 'id ASC');
+    }
+    return maps;
+  }
+
+  Future<List<Map<String, dynamic>>> getActiveCoupons() async {
+    final db = await database;
+    await _ensureCouponsTable(db);
+    final maps = await db.query(
+      'coupons',
+      where: 'isActive = ?',
+      whereArgs: [1],
+      orderBy: 'id ASC',
+    );
+    if (maps.isEmpty) {
+      final all = await db.query('coupons');
+      if (all.isEmpty) {
+        await _insertDefaultCoupons(db);
+        return await db.query(
+          'coupons',
+          where: 'isActive = ?',
+          whereArgs: [1],
+          orderBy: 'id ASC',
+        );
+      }
+    }
+    return maps;
+  }
+
+  Future<int> insertCoupon(Map<String, dynamic> couponData) async {
+    final db = await database;
+    await _ensureCouponsTable(db);
+    return await db.insert(
+      'coupons',
+      couponData,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<int> updateCouponStatus(String code, bool isActive) async {
+    final db = await database;
+    await _ensureCouponsTable(db);
+    return await db.update(
+      'coupons',
+      {'isActive': isActive ? 1 : 0},
+      where: 'code = ?',
+      whereArgs: [code],
+    );
+  }
+
+  Future<int> deleteCoupon(String code) async {
+    final db = await database;
+    await _ensureCouponsTable(db);
+    return await db.delete('coupons', where: 'code = ?', whereArgs: [code]);
   }
 
   Future<Database> get db => database;

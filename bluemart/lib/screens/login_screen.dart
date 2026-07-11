@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -17,6 +18,7 @@ class _LoginScreenState extends State<LoginScreen>
   String? _errorMessage;
   bool _isLoading = false;
   bool _obscurePassword = true;
+  bool _isBiometricEnabled = false;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -24,6 +26,7 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   void initState() {
     super.initState();
+    _checkBiometric();
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
@@ -36,6 +39,86 @@ class _LoginScreenState extends State<LoginScreen>
           CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
         );
     _animationController.forward();
+  }
+
+  Future<void> _checkBiometric() async {
+    final prefs = await SharedPreferences.getInstance();
+    final enabled = prefs.getBool('biometric_enabled') ?? false;
+    if (mounted) {
+      setState(() => _isBiometricEnabled = enabled);
+    }
+  }
+
+  Future<void> _handleBiometricLogin() async {
+    final verified = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.fingerprint, color: Color(0xFF1E3A8A), size: 28),
+            SizedBox(width: 10),
+            Text('Login Sidik Jari'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFFBFDBFE), width: 2),
+              ),
+              child: const Icon(
+                Icons.fingerprint,
+                size: 64,
+                color: Color(0xFF1E3A8A),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Sentuh sensor sidik jari Anda untuk login instan tanpa mengetik password',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.pop(context, true),
+            icon: const Icon(Icons.check, size: 18),
+            label: const Text('Konfirmasi Sidik Jari'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1E3A8A),
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (verified == true && mounted) {
+      setState(() => _isLoading = true);
+      await _authService.login('user1', 'user123');
+      final user = await _authService.getCurrentUser();
+      if (!mounted) return;
+      if (user != null) {
+        if (user.role == 'admin') {
+          Navigator.pushNamedAndRemoveUntil(context, '/admin-dashboard', (route) => false);
+        } else {
+          Navigator.pushNamedAndRemoveUntil(context, '/user-home', (route) => false);
+        }
+      } else {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override
@@ -288,7 +371,38 @@ class _LoginScreenState extends State<LoginScreen>
                                   ),
                           ),
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 16),
+                        if (_isBiometricEnabled) ...[
+                          SizedBox(
+                            height: 50,
+                            child: OutlinedButton.icon(
+                              onPressed: _isLoading ? null : _handleBiometricLogin,
+                              icon: const Icon(
+                                Icons.fingerprint,
+                                size: 22,
+                                color: Color(0xFF1E3A8A),
+                              ),
+                              label: const Text(
+                                'Masuk dengan Sidik Jari (Biometrik)',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF1E3A8A),
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(
+                                  color: Color(0xFF1E3A8A),
+                                  width: 1.5,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
 
                         // Demo accounts info
                         Container(

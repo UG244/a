@@ -306,7 +306,7 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
 
               // Category dropdown
               DropdownButtonFormField<String>(
-                value: _category,
+                initialValue: _category,
                 decoration: const InputDecoration(
                   labelText: 'Kategori',
                   border: OutlineInputBorder(),

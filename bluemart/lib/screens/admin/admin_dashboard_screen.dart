@@ -166,12 +166,34 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                                 ],
                               ),
                             ),
-                            IconButton(
-                              icon: Icon(
-                                Icons.refresh,
-                                color: Colors.white.withValues(alpha: 0.85),
-                              ),
-                              onPressed: _loadDashboardData,
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.refresh,
+                                    color: Colors.white.withValues(alpha: 0.85),
+                                  ),
+                                  onPressed: _loadDashboardData,
+                                  tooltip: 'Muat Ulang Data',
+                                ),
+                                IconButton(
+                                  icon: Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: const Icon(
+                                      Icons.manage_accounts,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  onPressed: () => Navigator.pushNamed(context, '/admin-profile'),
+                                  tooltip: 'Profil & Pengaturan Admin',
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -428,10 +450,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                 Navigator.pushNamed(context, '/admin-products');
                 break;
               case 2:
-                _showComingSoon('Kupon Diskon');
+                Navigator.pushNamed(context, '/admin-coupon');
                 break;
               case 3:
-                _showComingSoon('Pembayaran QRIS');
+                Navigator.pushNamed(context, '/admin-qris');
                 break;
               case 4:
                 Navigator.pushNamed(context, '/admin-sales-report');
@@ -477,53 +499,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  void _showComingSoon(String feature) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E3A8A).withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Icon(
-                Icons.construction,
-                size: 48,
-                color: Color(0xFF1E3A8A),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              feature,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Fitur ini sedang dalam pengembangan',
-              style: TextStyle(color: Colors.grey),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Tutup'),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildSummaryCard({
     required IconData icon,

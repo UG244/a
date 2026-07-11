@@ -43,11 +43,11 @@ class TransactionService {
           }
         }
 
-        // Step 2: Insert transaction
+        // Step 2: Insert transaction with pending status (admin will verify)
         final transactionData = {
           'buyerUsername': buyerUsername,
           'totalAmount': totalAmount,
-          'status': 'completed',
+          'status': 'menunggu',
           'createdAt': DateTime.now().toIso8601String(),
         };
         final transactionId = await txn.insert('transactions', transactionData);
@@ -101,11 +101,17 @@ class TransactionService {
     return await _dbHelper.getAllTransactions();
   }
 
-  Future<List<Map<String, dynamic>>> getTransactionItems(int transactionId) async {
+  Future<List<Map<String, dynamic>>> getTransactionItems(
+    int transactionId,
+  ) async {
     return await _dbHelper.getTransactionItems(transactionId);
   }
 
   Future<double> getTotalRevenue() async {
     return await _dbHelper.getTotalRevenue();
+  }
+
+  Future<int> updateTransactionStatus(int transactionId, String status) async {
+    return await _dbHelper.updateTransactionStatus(transactionId, status);
   }
 }

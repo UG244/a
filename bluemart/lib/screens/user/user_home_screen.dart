@@ -20,6 +20,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   String _searchQuery = '';
   String _selectedCategory = 'Semua';
   int _currentBanner = 0;
+  final PageController _bannerController = PageController();
 
   final List<Map<String, dynamic>> _banners = [
     {
@@ -105,12 +106,21 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     _startBannerAutoScroll();
   }
 
+  @override
+  void dispose() {
+    _bannerController.dispose();
+    super.dispose();
+  }
+
   void _startBannerAutoScroll() {
     Future.delayed(const Duration(seconds: 4), () {
-      if (mounted) {
-        setState(() {
-          _currentBanner = (_currentBanner + 1) % _banners.length;
-        });
+      if (mounted && _bannerController.hasClients) {
+        final nextIndex = (_currentBanner + 1) % _banners.length;
+        _bannerController.animateToPage(
+          nextIndex,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOutCubic,
+        );
         _startBannerAutoScroll();
       }
     });
@@ -159,6 +169,34 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
             duration: const Duration(seconds: 2),
           ),
         );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Stok tidak mencukupi'),
+            backgroundColor: Color(0xFFEF4444),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  void _directCheckout(Product product) {
+    final cart = context.read<CartService>();
+    final success = cart.addItem(
+      CartItem(
+        productId: product.id!,
+        productName: product.name,
+        unitPrice: product.price,
+        quantity: 1,
+        photoPath: product.photoPath,
+      ),
+      product.stock,
+    );
+
+    if (mounted) {
+      if (success) {
+        Navigator.pushNamed(context, '/user-checkout');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -401,135 +439,161 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
   }
 
   Widget _buildBannerCarousel() {
-    final banner = _banners[_currentBanner];
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      child: Container(
-        height: 150,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [banner['color1'] as Color, banner['color2'] as Color],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: (banner['color1'] as Color).withValues(alpha: 0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            // Decorative circles
-            Positioned(
-              right: -20,
-              top: -20,
-              child: Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(50),
-                ),
-              ),
-            ),
-            Positioned(
-              right: 30,
-              bottom: -30,
-              child: Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(40),
-                ),
-              ),
-            ),
-            // Content
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+          child: SizedBox(
+            height: 150,
+            child: PageView.builder(
+              controller: _bannerController,
+              itemCount: _banners.length,
+              onPageChanged: (index) {
+                setState(() {
+                  _currentBanner = index;
+                });
+              },
+              itemBuilder: (context, index) {
+                final banner = _banners[index];
+                return Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 2),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [banner['color1'] as Color, banner['color2'] as Color],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: (banner['color1'] as Color).withValues(alpha: 0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Stack(
+                    children: [
+                      // Decorative circles
+                      Positioned(
+                        right: -20,
+                        top: -20,
+                        child: Container(
+                          width: 100,
+                          height: 100,
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(6),
+                            color: Colors.white.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(50),
                           ),
-                          child: Text(
-                            banner['badge'] as String,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1,
+                        ),
+                      ),
+                      Positioned(
+                        right: 30,
+                        bottom: -30,
+                        child: Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(40),
+                          ),
+                        ),
+                      ),
+                      // Content
+                      Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 3,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.2),
+                                      borderRadius: BorderRadius.circular(6),
+                                    ),
+                                    child: Text(
+                                      banner['badge'] as String,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.bold,
+                                        letterSpacing: 1,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    banner['title'] as String,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    banner['subtitle'] as String,
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(alpha: 0.85),
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
+                            Icon(
+                              banner['icon'] as IconData,
+                              size: 60,
+                              color: Colors.white.withValues(alpha: 0.3),
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 10),
-                        Text(
-                          banner['title'] as String,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          banner['subtitle'] as String,
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.85),
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  Icon(
-                    banner['icon'] as IconData,
-                    size: 60,
-                    color: Colors.white.withValues(alpha: 0.3),
-                  ),
-                ],
-              ),
+                );
+              },
             ),
-            // Dot indicators
-            Positioned(
-              bottom: 8,
-              left: 0,
-              right: 0,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(_banners.length, (index) {
-                  return Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 3),
-                    width: _currentBanner == index ? 20 : 6,
-                    height: 6,
-                    decoration: BoxDecoration(
-                      color: _currentBanner == index
-                          ? Colors.white
-                          : Colors.white.withValues(alpha: 0.4),
-                      borderRadius: BorderRadius.circular(3),
-                    ),
-                  );
-                }),
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
+        // Dot indicators
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(_banners.length, (index) {
+            return GestureDetector(
+              onTap: () {
+                if (_bannerController.hasClients) {
+                  _bannerController.animateToPage(
+                    index,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                }
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                margin: const EdgeInsets.symmetric(horizontal: 3, vertical: 4),
+                width: _currentBanner == index ? 24 : 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: _currentBanner == index
+                      ? const Color(0xFF1E3A8A)
+                      : Colors.grey[300],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            );
+          }),
+        ),
+        const SizedBox(height: 6),
+      ],
     );
   }
 
@@ -539,10 +603,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
+              const Text(
                 'Kategori Pilihan',
                 style: TextStyle(
                   fontSize: 16,
@@ -550,12 +614,38 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                   color: Color(0xFF0F172A),
                 ),
               ),
-              Text(
-                'Lihat Semua',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF3B82F6),
-                  fontWeight: FontWeight.w600,
+              GestureDetector(
+                onTap: () {
+                  // Set category filter to show all products
+                  setState(() {
+                    _selectedCategory = 'Semua';
+                  });
+                  // Scroll to products section
+                  Scrollable.ensureVisible(
+                    context,
+                    duration: const Duration(milliseconds: 300),
+                  );
+                },
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      'Lihat Semua',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF3B82F6),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -569,31 +659,43 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               separatorBuilder: (_, _) => const SizedBox(width: 16),
               itemBuilder: (context, index) {
                 final cat = _categories[index];
-                return Column(
-                  children: [
-                    Container(
-                      width: 52,
-                      height: 52,
-                      decoration: BoxDecoration(
-                        color: (cat['color'] as Color).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Icon(
-                        cat['icon'] as IconData,
-                        color: cat['color'] as Color,
-                        size: 24,
-                      ),
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedCategory = cat['name'] as String;
+                    });
+                  },
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 52,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            color: (cat['color'] as Color).withValues(
+                              alpha: 0.1,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Icon(
+                            cat['icon'] as IconData,
+                            color: cat['color'] as Color,
+                            size: 24,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          cat['name'] as String,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF475569),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      cat['name'] as String,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF475569),
-                      ),
-                    ),
-                  ],
+                  ),
                 );
               },
             ),
@@ -702,36 +804,9 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                        )
-                      else if (product.stock < 5)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.orange[100],
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            'Sisa ${product.stock}',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: Colors.orange[700],
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        )
-                      else
-                        Text(
-                          'Stok: ${product.stock}',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: Colors.grey[600],
-                          ),
                         ),
                       const Spacer(),
-                      if (!isOutOfStock)
+                      if (!isOutOfStock) ...[
                         Container(
                           decoration: BoxDecoration(
                             color: const Color(0xFF1E3A8A),
@@ -751,6 +826,28 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                             padding: EdgeInsets.zero,
                           ),
                         ),
+                        const SizedBox(width: 4),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF22C55E),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(
+                              Icons.flash_on,
+                              size: 16,
+                              color: Colors.white,
+                            ),
+                            onPressed: () => _directCheckout(product),
+                            constraints: const BoxConstraints(
+                              minWidth: 32,
+                              minHeight: 32,
+                            ),
+                            padding: EdgeInsets.zero,
+                            tooltip: 'Beli Sekarang',
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ],

@@ -44,15 +44,15 @@ class Product {
 
   factory Product.fromMap(Map<String, dynamic> map) {
     return Product(
-      id: map['id'] as int?,
-      name: map['name'] as String,
+      id: (map['id'] as num?)?.toInt(),
+      name: map['name'] as String? ?? '',
       description: (map['description'] as String?) ?? '',
-      category: map['category'] as String,
-      price: (map['price'] as num).toDouble(),
-      stock: map['stock'] as int,
+      category: map['category'] as String? ?? 'Umum',
+      price: (map['price'] as num?)?.toDouble() ?? 0.0,
+      stock: (map['stock'] as num?)?.toInt() ?? 0,
       photoPath: map['photoPath'] as String?,
-      supplierId: map['supplierId'] as int?,
-      isActive: (map['isActive'] as int?) == 1,
+      supplierId: (map['supplierId'] as num?)?.toInt(),
+      isActive: map['isActive'] == 1 || map['isActive'] == true || map['isActive'] == 'true',
       createdAt: map['createdAt'] as String?,
       updatedAt: map['updatedAt'] as String?,
     );
