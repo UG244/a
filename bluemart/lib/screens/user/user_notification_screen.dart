@@ -226,9 +226,9 @@ class _UserNotificationScreenState extends State<UserNotificationScreen>
         child: const Icon(Icons.delete_outline, color: Colors.white),
       ),
       confirmDismiss: (_) async {
-        notif.remove(item.id);
         return true;
       },
+      onDismissed: (_) => notif.remove(item.id),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),

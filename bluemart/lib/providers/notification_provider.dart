@@ -44,8 +44,21 @@ class NotificationProvider extends ChangeNotifier {
           .whereType<AppNotification>()
           .toList();
       if (loaded.isNotEmpty) {
+        // Older app versions could generate several notifications in the same
+        // millisecond. Duplicate ids crash Dismissible because its keys must
+        // be unique, so keep only the newest valid occurrence.
+        final uniqueById = <String, AppNotification>{};
+        for (final notification in loaded) {
+          uniqueById.putIfAbsent(notification.id, () => notification);
+        }
+        loaded
+          ..clear()
+          ..addAll(uniqueById.values);
         loaded.sort((a, b) => b.createdAt.compareTo(a.createdAt));
         _notifications = loaded;
+        if (uniqueById.length != decoded.length) {
+          await _saveToDisk();
+        }
         notifyListeners();
       } else {
         _saveToDisk();
@@ -106,9 +119,12 @@ class NotificationProvider extends ChangeNotifier {
   }
 
   void remove(String id) {
+    final oldLength = _notifications.length;
     _notifications.removeWhere((n) => n.id == id);
-    _debouncedSave();
-    notifyListeners();
+    if (_notifications.length != oldLength) {
+      _debouncedSave();
+      notifyListeners();
+    }
   }
 
   void _debouncedSave() {

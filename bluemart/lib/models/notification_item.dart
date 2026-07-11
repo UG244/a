@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 
 class AppNotification {
+  static int _idSequence = 0;
+
   final String id;
   final String type;
   final String title;
@@ -63,6 +65,11 @@ class AppNotification {
     return 'notifications';
   }
 
+  static String _uniqueId(String prefix) {
+    _idSequence = (_idSequence + 1) & 0x7fffffff;
+    return '${prefix}_${DateTime.now().microsecondsSinceEpoch}_$_idSequence';
+  }
+
   factory AppNotification.orderStatus({
     required String orderId,
     required String statusLabel,
@@ -70,7 +77,7 @@ class AppNotification {
     Color color = const Color(0xFF3B82F6),
   }) {
     return AppNotification(
-      id: 'order_${orderId}_${DateTime.now().millisecondsSinceEpoch}',
+      id: _uniqueId('order_$orderId'),
       type: 'order',
       title: 'Status Pesanan',
       message: 'Pesanan #$orderId telah $statusLabel',
@@ -83,7 +90,7 @@ class AppNotification {
 
   factory AppNotification.orderSuccess(String orderId) {
     return AppNotification(
-      id: 'success_${orderId}_${DateTime.now().millisecondsSinceEpoch}',
+      id: _uniqueId('success_$orderId'),
       type: 'order',
       title: 'Pesanan Berhasil',
       message:
@@ -102,7 +109,7 @@ class AppNotification {
     Color color = const Color(0xFFF97316),
   }) {
     return AppNotification(
-      id: 'promo_${DateTime.now().millisecondsSinceEpoch}',
+      id: _uniqueId('promo'),
       type: 'promo',
       title: title,
       message: message,
@@ -112,11 +119,7 @@ class AppNotification {
     );
   }
 
-  static int _colorToInt(Color c) =>
-      (c.a.toInt() << 24) |
-      (c.r.toInt() << 16) |
-      (c.g.toInt() << 8) |
-      c.b.toInt();
+  static int _colorToInt(Color color) => color.toARGB32();
 
   Map<String, dynamic> toMap() => {
     'id': id,
