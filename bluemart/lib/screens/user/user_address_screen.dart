@@ -33,6 +33,64 @@ class _UserAddressScreenState extends State<UserAddressScreen> {
   ];
 
   int? _selectedId;
+  bool _isLocatingList = false;
+
+  Future<void> _fetchLocationForList() async {
+    const String defaultAddress = 'ITB STIKOM BALI RENON, Jl. Raya Puputan No.86, Dangin Puri Klod, Kec. Denpasar Tim., Kota Denpasar, Bali 80234';
+    
+    setState(() => _isLocatingList = true);
+    String finalAddress = defaultAddress;
+    
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (serviceEnabled) {
+        LocationPermission permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.denied) {
+          permission = await Geolocator.requestPermission();
+        }
+        if (permission != LocationPermission.denied && permission != LocationPermission.deniedForever) {
+          Position position = await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.high,
+              timeLimit: Duration(seconds: 10),
+            ),
+          );
+
+          final url = Uri.parse('https://nominatim.openstreetmap.org/reverse?format=json&lat=${position.latitude}&lon=${position.longitude}');
+          final response = await http.get(url, headers: {'User-Agent': 'BlueMart/1.0'});
+
+          if (response.statusCode == 200) {
+            final data = json.decode(response.body);
+            final displayName = data['display_name'];
+            if (displayName != null && displayName.isNotEmpty) {
+              finalAddress = displayName;
+            }
+          }
+        }
+      }
+    } catch (_) {
+      // Abaikan dan gunakan default
+    }
+
+    if (mounted) {
+      final newAddress = CheckoutAddress(
+        id: DateTime.now().millisecondsSinceEpoch,
+        label: 'Lokasi Anda',
+        fullAddress: finalAddress,
+        recipient: 'Pengguna',
+        phone: '-',
+        isDefault: _addresses.isEmpty,
+        userId: 'user-1',
+      );
+      setState(() {
+        _addresses.insert(0, newAddress);
+        _selectedId = newAddress.id;
+        _isLocatingList = false;
+      });
+      // Otomatis memilih dan kembali ke checkout
+      Navigator.pop(context, newAddress);
+    }
+  }
 
   @override
   void initState() {
@@ -55,6 +113,25 @@ class _UserAddressScreenState extends State<UserAddressScreen> {
       ),
       body: Column(
         children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+            child: SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _isLocatingList ? null : _fetchLocationForList,
+                icon: _isLocatingList 
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.my_location, size: 18),
+                label: Text(_isLocatingList ? 'Mencari Lokasi...' : 'Gunakan Lokasi Saat Ini'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  foregroundColor: const Color(0xFF1E3A8A),
+                  side: const BorderSide(color: Color(0xFF1E3A8A)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+          ),
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
