@@ -10,12 +10,27 @@ import 'user_profile_screen.dart';
 class UserMainScreen extends StatefulWidget {
   const UserMainScreen({super.key});
 
+  static bool switchToTab(BuildContext context, int index) {
+    final state = context.findAncestorStateOfType<_UserMainScreenState>();
+    if (state != null) {
+      state.switchToTab(index);
+      return true;
+    }
+    return false;
+  }
+
   @override
   State<UserMainScreen> createState() => _UserMainScreenState();
 }
 
 class _UserMainScreenState extends State<UserMainScreen> {
   int _currentIndex = 0;
+
+  void switchToTab(int index) {
+    if (mounted && index >= 0 && index < _screens.length) {
+      setState(() => _currentIndex = index);
+    }
+  }
 
   final List<Widget> _screens = [
     const UserHomeScreen(),
@@ -124,73 +139,9 @@ class _UserMainScreenState extends State<UserMainScreen> {
               ),
               label: 'Keranjang',
             ),
-            BottomNavigationBarItem(
-              icon: Consumer<CartService>(
-                builder: (context, cart, _) => Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    const Icon(Icons.receipt_long_outlined),
-                    if (cart.uniqueItemCount > 0)
-                      Positioned(
-                        right: -8,
-                        top: -4,
-                        child: Container(
-                          padding: const EdgeInsets.all(3),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFEF4444),
-                            shape: BoxShape.circle,
-                          ),
-                          constraints: const BoxConstraints(
-                            minWidth: 14,
-                            minHeight: 14,
-                          ),
-                          child: Text(
-                            '${cart.uniqueItemCount}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 8,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              activeIcon: Consumer<CartService>(
-                builder: (context, cart, _) => Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    const Icon(Icons.receipt_long),
-                    if (cart.uniqueItemCount > 0)
-                      Positioned(
-                        right: -8,
-                        top: -4,
-                        child: Container(
-                          padding: const EdgeInsets.all(3),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFEF4444),
-                            shape: BoxShape.circle,
-                          ),
-                          constraints: const BoxConstraints(
-                            minWidth: 14,
-                            minHeight: 14,
-                          ),
-                          child: Text(
-                            '${cart.uniqueItemCount}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 8,
-                              fontWeight: FontWeight.bold,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.receipt_long_outlined),
+              activeIcon: Icon(Icons.receipt_long),
               label: 'Pesanan',
             ),
             const BottomNavigationBarItem(

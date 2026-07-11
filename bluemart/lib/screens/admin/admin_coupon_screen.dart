@@ -336,10 +336,8 @@ class _AdminCouponScreenState extends State<AdminCouponScreen> {
                   'createdAt': DateTime.now().toIso8601String(),
                 });
 
-                if (mounted) {
-                  Navigator.pop(context);
-                  _loadCoupons();
-                }
+                if (context.mounted) Navigator.pop(context);
+                if (mounted) _loadCoupons();
               }
             },
             child: const Text('Simpan'),

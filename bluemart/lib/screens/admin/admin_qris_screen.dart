@@ -94,7 +94,14 @@ class _AdminQrisScreenState extends State<AdminQrisScreen> {
                             version: QrVersions.auto,
                             size: 168,
                             backgroundColor: Colors.white,
-                            foregroundColor: const Color(0xFF1E3A8A),
+                            eyeStyle: const QrEyeStyle(
+                              eyeShape: QrEyeShape.square,
+                              color: Color(0xFF1E3A8A),
+                            ),
+                            dataModuleStyle: const QrDataModuleStyle(
+                              dataModuleShape: QrDataModuleShape.square,
+                              color: Color(0xFF1E3A8A),
+                            ),
                           ),
                         )
                       : Center(

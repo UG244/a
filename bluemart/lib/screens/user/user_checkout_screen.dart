@@ -11,6 +11,7 @@ import '../../models/checkout_address.dart';
 import '../../services/cart_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/transaction_service.dart';
+import '../../services/biometric_service.dart';
 import '../../database/db_helper.dart';
 import 'user_address_screen.dart';
 
@@ -163,6 +164,8 @@ class _UserCheckoutScreenState extends State<UserCheckoutScreen> {
           if (cart.items.isEmpty && _resultMessage == null) {
             return Center(
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
                     width: 80,
@@ -1076,7 +1079,7 @@ class _UserCheckoutScreenState extends State<UserCheckoutScreen> {
       }
 
       final fileName = 'QRIS_BlueMart_Rp${_grandTotal.toInt()}_${DateTime.now().millisecondsSinceEpoch}.png';
-      final file = File('${targetDir?.path ?? ''}/$fileName');
+      final file = File('${targetDir.path}/$fileName');
       await file.writeAsBytes(pngBytes);
 
       if (mounted) {
@@ -1269,73 +1272,11 @@ class _UserCheckoutScreenState extends State<UserCheckoutScreen> {
   }
 
   Future<bool?> _showBiometricDialog() async {
-    return await showDialog<bool>(
+    final success = await BiometricService().authenticate(
       context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Row(
-          children: [
-            Icon(Icons.fingerprint, color: Color(0xFF1E3A8A), size: 28),
-            SizedBox(width: 10),
-            Text('Konfirmasi Biometrik'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEFF6FF),
-                shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFFBFDBFE), width: 2),
-              ),
-              child: const Icon(
-                Icons.fingerprint,
-                size: 64,
-                color: Color(0xFF1E3A8A),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Sentuh sensor sidik jari Anda untuk memverifikasi pembayaran',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              'Total: Rp ${_formatPrice(_grandTotal)}',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF22C55E),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, null),
-            child: const Text('Batal'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Gunakan PIN/Password'),
-          ),
-          ElevatedButton.icon(
-            onPressed: () => Navigator.pop(context, true),
-            icon: const Icon(Icons.check, size: 18),
-            label: const Text('Konfirmasi Sidik Jari'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1E3A8A),
-              foregroundColor: Colors.white,
-            ),
-          ),
-        ],
-      ),
+      localizedReason: 'Sentuh sensor sidik jari Anda untuk konfirmasi pembayaran Rp ${_formatPrice(_grandTotal)}',
     );
+    return success ? true : false;
   }
 
   Future<bool?> _showPinPasswordDialog() async {

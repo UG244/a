@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/auth_service.dart';
+import '../../services/biometric_service.dart';
 import '../../services/product_service.dart';
 import '../../services/transaction_service.dart';
 import '../../models/app_user.dart';
@@ -131,39 +132,12 @@ class _AdminProfileScreenState extends State<AdminProfileScreen> {
                     onChanged: (value) async {
                       final prefs = await SharedPreferences.getInstance();
                       if (value) {
-                        final confirmed = await showDialog<bool>(
+                        if (!context.mounted) return;
+                        final confirmed = await BiometricService().authenticate(
                           context: context,
-                          builder: (context) => AlertDialog(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            title: const Row(
-                              children: [
-                                Icon(Icons.admin_panel_settings, color: Color(0xFF0F172A)),
-                                SizedBox(width: 8),
-                                Text('Proteksi Biometrik?'),
-                              ],
-                            ),
-                            content: const Text(
-                              'Aktifkan verifikasi sidik jari/Face ID untuk keamanan maksimal saat login ke dasbor pengelola BlueMart.',
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, false),
-                                child: const Text('Batal'),
-                              ),
-                              ElevatedButton(
-                                onPressed: () => Navigator.pop(context, true),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF0F172A),
-                                  foregroundColor: Colors.white,
-                                ),
-                                child: const Text('Aktifkan'),
-                              ),
-                            ],
-                          ),
+                          localizedReason: 'Sentuh sensor sidik jari Anda untuk mengaktifkan kunci biometrik Admin BlueMart',
                         );
-                        if (confirmed == true) {
+                        if (confirmed) {
                           await prefs.setBool('biometric_enabled', true);
                           setModalState(() => _isBiometricEnabled = true);
                           setState(() => _isBiometricEnabled = true);

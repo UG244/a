@@ -216,16 +216,27 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         slivers: [
           // App Bar
           SliverAppBar(
+            pinned: true,
+            floating: true,
+            elevation: 2,
+            backgroundColor: const Color(0xFF1E3A8A),
             title: const Row(
               children: [
-                Icon(Icons.store_rounded, size: 22),
+                Icon(Icons.store_rounded, size: 24, color: Colors.white),
                 SizedBox(width: 8),
-                Text('BlueMart', style: TextStyle(fontSize: 18)),
+                Text(
+                  'BlueMart',
+                  style: TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
               ],
             ),
             actions: [
               IconButton(
-                icon: const Icon(Icons.notifications_outlined),
+                icon: const Icon(Icons.notifications_outlined, color: Colors.white),
                 onPressed: () =>
                     Navigator.pushNamed(context, '/user-notifications'),
               ),
@@ -233,7 +244,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                 builder: (context, cart, _) => Stack(
                   children: [
                     IconButton(
-                      icon: const Icon(Icons.shopping_cart_outlined),
+                      icon: const Icon(Icons.shopping_cart_outlined, color: Colors.white),
                       onPressed: () =>
                           Navigator.pushNamed(context, '/user-cart'),
                     ),
@@ -344,7 +355,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
 
                 // Category filter chips
                 SizedBox(
-                  height: 36,
+                  height: 44,
                   child: ListView(
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -359,12 +370,18 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                           ),
                           selected: isSelected,
                           selectedColor: const Color(0xFF1E3A8A),
+                          backgroundColor: const Color(0xFFF1F5F9),
                           checkmarkColor: Colors.white,
+                          side: BorderSide(
+                            color: isSelected
+                                ? const Color(0xFF1E3A8A)
+                                : const Color(0xFFCBD5E1),
+                          ),
                           labelStyle: TextStyle(
-                            color: isSelected ? Colors.white : null,
+                            color: isSelected ? Colors.white : const Color(0xFF334155),
                             fontWeight: isSelected
-                                ? FontWeight.w600
-                                : FontWeight.normal,
+                                ? FontWeight.w700
+                                : FontWeight.w600,
                           ),
                           onSelected: (_) =>
                               setState(() => _selectedCategory = cat),
@@ -395,25 +412,38 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Container(
-                            width: 80,
-                            height: 80,
+                            width: 100,
+                            height: 100,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF1F5F9),
-                              borderRadius: BorderRadius.circular(20),
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFFEFF6FF), Color(0xFFDBEAFE)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(30),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(
+                                    0xFF1E3A8A,
+                                  ).withValues(alpha: 0.08),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
                             ),
                             child: const Icon(
                               Icons.search_off,
-                              size: 40,
-                              color: Color(0xFF94A3B8),
+                              size: 50,
+                              color: Color(0xFF1E3A8A),
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 24),
                           const Text(
-                            'Produk tidak ditemukan',
+                            'Produk Tidak Ditemukan',
                             style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF475569),
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF0F172A),
                             ),
                           ),
                         ],
@@ -424,7 +454,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
-                          childAspectRatio: 0.72,
+                          childAspectRatio: 0.58,
                           crossAxisSpacing: 12,
                           mainAxisSpacing: 12,
                         ),
@@ -444,7 +474,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
           child: SizedBox(
-            height: 150,
+            height: 168,
             child: PageView.builder(
               controller: _bannerController,
               itemCount: _banners.length,
@@ -501,7 +531,10 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                       ),
                       // Content
                       Padding(
-                        padding: const EdgeInsets.all(20),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 14,
+                        ),
                         child: Row(
                           children: [
                             Expanded(
@@ -652,7 +685,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           ),
           const SizedBox(height: 12),
           SizedBox(
-            height: 80,
+            height: 94,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: _categories.length,
@@ -670,8 +703,8 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                     child: Column(
                       children: [
                         Container(
-                          width: 52,
-                          height: 52,
+                          width: 54,
+                          height: 54,
                           decoration: BoxDecoration(
                             color: (cat['color'] as Color).withValues(
                               alpha: 0.1,
@@ -681,16 +714,16 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                           child: Icon(
                             cat['icon'] as IconData,
                             color: cat['color'] as Color,
-                            size: 24,
+                            size: 26,
                           ),
                         ),
                         const SizedBox(height: 6),
                         Text(
                           cat['name'] as String,
                           style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF475569),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF334155),
                           ),
                         ),
                       ],
@@ -707,9 +740,21 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
 
   Widget _buildProductCard(Product product) {
     final isOutOfStock = product.stock <= 0;
-    return Card(
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF1E293B).withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         onTap: () =>
             Navigator.pushNamed(context, '/user-detail', arguments: product.id),
         child: Column(
@@ -719,38 +764,55 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
             Expanded(
               child: Stack(
                 children: [
-                  Container(
-                    width: double.infinity,
-                    color: const Color(0xFFF1F5F9),
-                    child:
-                        product.photoPath != null &&
-                            product.photoPath!.isNotEmpty
-                        ? Image.file(
-                            File(product.photoPath!),
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, err, stack) => const Icon(
-                              Icons.image,
-                              size: 48,
-                              color: Color(0xFF94A3B8),
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+                    child: Container(
+                      width: double.infinity,
+                      color: const Color(0xFFF8FAFC),
+                      child:
+                          product.photoPath != null &&
+                              product.photoPath!.isNotEmpty
+                          ? Image.file(
+                              File(product.photoPath!),
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, err, stack) => const Center(
+                                child: Icon(
+                                  Icons.shopping_bag_outlined,
+                                  size: 42,
+                                  color: Color(0xFF94A3B8),
+                                ),
+                              ),
+                            )
+                          : const Center(
+                              child: Icon(
+                                Icons.shopping_bag_outlined,
+                                size: 42,
+                                color: Color(0xFF94A3B8),
+                              ),
                             ),
-                          )
-                        : const Icon(
-                            Icons.image,
-                            size: 48,
-                            color: Color(0xFF94A3B8),
-                          ),
+                    ),
                   ),
                   if (isOutOfStock)
                     Positioned.fill(
-                      child: Container(
-                        color: Colors.black.withValues(alpha: 0.4),
-                        child: const Center(
-                          child: Text(
-                            'HABIS',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+                        child: Container(
+                          color: const Color(0xFF0F172A).withValues(alpha: 0.55),
+                          alignment: Alignment.center,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEF4444),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              'HABIS',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 11,
+                                letterSpacing: 0.8,
+                              ),
                             ),
                           ),
                         ),
@@ -761,7 +823,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
             ),
             // Info
             Padding(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -772,83 +834,85 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                     style: const TextStyle(
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
+                      color: Color(0xFF1E293B),
+                      height: 1.25,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Text(
                     'Rp ${_formatPrice(product.price)}',
                     style: const TextStyle(
                       color: Color(0xFF1E3A8A),
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w800,
                       fontSize: 14,
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      if (isOutOfStock)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.red[100],
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            'Habis',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: Colors.red[700],
-                              fontWeight: FontWeight.w600,
+                  const SizedBox(height: 10),
+                  // Consistent height bottom bar for every card
+                  SizedBox(
+                    height: 36,
+                    child: isOutOfStock
+                        ? Container(
+                            width: double.infinity,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                          ),
-                        ),
-                      const Spacer(),
-                      if (!isOutOfStock) ...[
-                        Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF1E3A8A),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: IconButton(
-                            icon: const Icon(
-                              Icons.add_shopping_cart,
-                              size: 16,
-                              color: Colors.white,
+                            child: const Text(
+                              'Stok Habis',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF94A3B8),
+                              ),
                             ),
-                            onPressed: () => _addToCart(product),
-                            constraints: const BoxConstraints(
-                              minWidth: 32,
-                              minHeight: 32,
-                            ),
-                            padding: EdgeInsets.zero,
+                          )
+                        : Row(
+                            children: [
+                              Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEFF6FF),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: const Color(0xFFBFDBFE)),
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(
+                                    Icons.add_shopping_cart_rounded,
+                                    size: 18,
+                                    color: Color(0xFF1E3A8A),
+                                  ),
+                                  onPressed: () => _addToCart(product),
+                                  padding: EdgeInsets.zero,
+                                  tooltip: 'Tambah ke Keranjang',
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: () => _directCheckout(product),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF1E3A8A),
+                                    foregroundColor: Colors.white,
+                                    elevation: 0,
+                                    padding: EdgeInsets.zero,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Beli',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                        const SizedBox(width: 4),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF22C55E),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: IconButton(
-                            icon: const Icon(
-                              Icons.flash_on,
-                              size: 16,
-                              color: Colors.white,
-                            ),
-                            onPressed: () => _directCheckout(product),
-                            constraints: const BoxConstraints(
-                              minWidth: 32,
-                              minHeight: 32,
-                            ),
-                            padding: EdgeInsets.zero,
-                            tooltip: 'Beli Sekarang',
-                          ),
-                        ),
-                      ],
-                    ],
                   ),
                 ],
               ),

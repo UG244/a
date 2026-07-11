@@ -177,32 +177,43 @@ class _UserNotificationScreenState extends State<UserNotificationScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 80,
-              height: 80,
+              width: 100,
+              height: 100,
               decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(20),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFEFF6FF), Color(0xFFDBEAFE)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(30),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF1E3A8A).withValues(alpha: 0.08),
+                    blurRadius: 16,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
               child: const Icon(
                 Icons.notifications_none,
-                size: 40,
-                color: Color(0xFF94A3B8),
+                size: 50,
+                color: Color(0xFF1E3A8A),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             const Text(
-              'Tidak ada notifikasi',
+              'Tidak Ada Notifikasi',
               style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF475569),
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF0F172A),
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'Tenang, kami akan memberitahu jika ada\ninfo terbaru untuk Anda',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
             ),
           ],
         ),

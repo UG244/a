@@ -5,6 +5,7 @@ import '../../models/product.dart';
 import '../../models/cart_item.dart';
 import '../../services/product_service.dart';
 import '../../services/cart_service.dart';
+import 'user_main_screen.dart';
 
 class UserFavoriteScreen extends StatefulWidget {
   const UserFavoriteScreen({super.key});
@@ -173,7 +174,7 @@ class _UserFavoriteScreenState extends State<UserFavoriteScreen> {
                 padding: const EdgeInsets.all(12),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  childAspectRatio: 0.72,
+                  childAspectRatio: 0.54,
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
                 ),
@@ -196,14 +197,23 @@ class _UserFavoriteScreenState extends State<UserFavoriteScreen> {
             height: 100,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFFFCE7F3), Color(0xFFFBCFE8)],
+                colors: [Color(0xFFEFF6FF), Color(0xFFDBEAFE)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(30),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF1E3A8A).withValues(alpha: 0.08),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
             child: const Icon(
               Icons.favorite_border,
               size: 50,
-              color: Color(0xFFEC4899),
+              color: Color(0xFF1E3A8A),
             ),
           ),
           const SizedBox(height: 24),
@@ -219,13 +229,25 @@ class _UserFavoriteScreenState extends State<UserFavoriteScreen> {
           Text(
             'Tambahkan produk favorit Anda\ndengan menekan ikon ❤️',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
-            onPressed: () => Navigator.pushNamed(context, '/user-home'),
-            icon: const Icon(Icons.shopping_bag),
+            onPressed: () {
+              if (!UserMainScreen.switchToTab(context, 0)) {
+                Navigator.pushReplacementNamed(context, '/user-home');
+              }
+            },
+            icon: const Icon(Icons.shopping_bag, size: 18),
             label: const Text('Mulai Belanja'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1E3A8A),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
           ),
         ],
       ),
@@ -234,150 +256,210 @@ class _UserFavoriteScreenState extends State<UserFavoriteScreen> {
 
   Widget _buildFavoriteCard(Product product) {
     final isOutOfStock = product.stock <= 0;
-    return Card(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Stack(
-              children: [
-                Container(
-                  width: double.infinity,
-                  color: const Color(0xFFF1F5F9),
-                  child:
-                      product.photoPath != null && product.photoPath!.isNotEmpty
-                      ? Image.file(
-                          File(product.photoPath!),
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, err, stack) => const Icon(
-                            Icons.image,
-                            size: 48,
-                            color: Color(0xFF94A3B8),
-                          ),
-                        )
-                      : const Icon(
-                          Icons.image,
-                          size: 48,
-                          color: Color(0xFF94A3B8),
-                        ),
-                ),
-                Positioned(
-                  top: 4,
-                  right: 4,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 4,
-                        ),
-                      ],
-                    ),
-                    child: IconButton(
-                      icon: const Icon(
-                        Icons.favorite,
-                        color: Color(0xFFEC4899),
-                      ),
-                      onPressed: () => _removeFavorite(product),
-                      iconSize: 20,
-                      constraints: const BoxConstraints(
-                        minWidth: 36,
-                        minHeight: 36,
-                      ),
-                    ),
-                  ),
-                ),
-                if (isOutOfStock)
-                  Positioned.fill(
-                    child: Container(
-                      color: Colors.black.withValues(alpha: 0.4),
-                      child: const Center(
-                        child: Text(
-                          'HABIS',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  product.name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Rp ${_formatPrice(product.price)}',
-                  style: const TextStyle(
-                    color: Color(0xFF1E3A8A),
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                if (!isOutOfStock) ...[
-                  Row(
-                    children: [
-                      Expanded(
-                        child: SizedBox(
-                          height: 32,
-                          child: ElevatedButton.icon(
-                            onPressed: () => _addToCart(product),
-                            icon: const Icon(
-                              Icons.shopping_cart_outlined,
-                              size: 14,
-                            ),
-                            label: const Text(
-                              'Add to cart',
-                              style: TextStyle(fontSize: 10),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF1E3A8A),
-                              padding: EdgeInsets.zero,
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      SizedBox(
-                        height: 32,
-                        child: ElevatedButton.icon(
-                          onPressed: () => _directCheckout(product),
-                          icon: const Icon(Icons.flash_on, size: 12),
-                          label: const Text(
-                            'Checkout',
-                            style: TextStyle(fontSize: 10),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF22C55E),
-                            padding: EdgeInsets.zero,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ],
-            ),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF1E293B).withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () =>
+            Navigator.pushNamed(context, '/user-detail', arguments: product.id),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+                    child: Container(
+                      width: double.infinity,
+                      color: const Color(0xFFF8FAFC),
+                      child:
+                          product.photoPath != null && product.photoPath!.isNotEmpty
+                          ? Image.file(
+                              File(product.photoPath!),
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, err, stack) => const Center(
+                                child: Icon(
+                                  Icons.shopping_bag_outlined,
+                                  size: 42,
+                                  color: Color(0xFF94A3B8),
+                                ),
+                              ),
+                            )
+                          : const Center(
+                              child: Icon(
+                                Icons.shopping_bag_outlined,
+                                size: 42,
+                                color: Color(0xFF94A3B8),
+                              ),
+                            ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.95),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.12),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.favorite_rounded,
+                          color: Color(0xFFEC4899),
+                          size: 18,
+                        ),
+                        onPressed: () => _removeFavorite(product),
+                        padding: EdgeInsets.zero,
+                        tooltip: 'Hapus dari Favorit',
+                      ),
+                    ),
+                  ),
+                  if (isOutOfStock)
+                    Positioned.fill(
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+                        child: Container(
+                          color: const Color(0xFF0F172A).withValues(alpha: 0.55),
+                          alignment: Alignment.center,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEF4444),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text(
+                              'HABIS',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 11,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                      color: Color(0xFF1E293B),
+                      height: 1.25,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Rp ${_formatPrice(product.price)}',
+                    style: const TextStyle(
+                      color: Color(0xFF1E3A8A),
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: 36,
+                    child: isOutOfStock
+                        ? Container(
+                            width: double.infinity,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: const Text(
+                              'Stok Habis',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF94A3B8),
+                              ),
+                            ),
+                          )
+                        : Row(
+                            children: [
+                              Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEFF6FF),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: const Color(0xFFBFDBFE)),
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(
+                                    Icons.add_shopping_cart_rounded,
+                                    size: 18,
+                                    color: Color(0xFF1E3A8A),
+                                  ),
+                                  onPressed: () => _addToCart(product),
+                                  padding: EdgeInsets.zero,
+                                  tooltip: 'Tambah ke Keranjang',
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: ElevatedButton(
+                                  onPressed: () => _directCheckout(product),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF1E3A8A),
+                                    foregroundColor: Colors.white,
+                                    elevation: 0,
+                                    padding: EdgeInsets.zero,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Beli',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

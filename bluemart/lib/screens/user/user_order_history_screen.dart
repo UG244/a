@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import '../../services/transaction_service.dart';
+import 'user_main_screen.dart';
 
 class UserOrderHistoryScreen extends StatefulWidget {
   const UserOrderHistoryScreen({super.key});
@@ -357,7 +358,7 @@ class _UserOrderHistoryScreenState extends State<UserOrderHistoryScreen> {
                                 : (selected) async {
                                     if (selected) {
                                       await _updateOrderStatus(order['id'] as int, statusOption);
-                                      if (mounted) Navigator.pop(context);
+                                      if (context.mounted) Navigator.pop(context);
                                     }
                                   },
                           );
@@ -451,19 +452,35 @@ class _UserOrderHistoryScreenState extends State<UserOrderHistoryScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Container(
-                                width: 80,
-                                height: 80,
+                                width: 100,
+                                height: 100,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFF1F5F9),
-                                  borderRadius: BorderRadius.circular(20),
+                                  gradient: const LinearGradient(
+                                    colors: [
+                                      Color(0xFFEFF6FF),
+                                      Color(0xFFDBEAFE),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(30),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(
+                                        0xFF1E3A8A,
+                                      ).withValues(alpha: 0.08),
+                                      blurRadius: 16,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                  ],
                                 ),
                                 child: const Icon(
                                   Icons.receipt_long_outlined,
-                                  size: 40,
-                                  color: Color(0xFF94A3B8),
+                                  size: 50,
+                                  color: Color(0xFF1E3A8A),
                                 ),
                               ),
-                              const SizedBox(height: 16),
+                              const SizedBox(height: 24),
                               const Text(
                                 'Belum ada pesanan',
                                 style: TextStyle(
@@ -478,6 +495,27 @@ class _UserOrderHistoryScreenState extends State<UserOrderHistoryScreen> {
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: Colors.grey[500],
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  if (!UserMainScreen.switchToTab(context, 0)) {
+                                    Navigator.pushReplacementNamed(context, '/user-home');
+                                  }
+                                },
+                                icon: const Icon(Icons.shopping_bag, size: 18),
+                                label: const Text('Belanja Sekarang'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF1E3A8A),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
                                 ),
                               ),
                             ],

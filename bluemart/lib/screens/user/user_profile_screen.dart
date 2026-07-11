@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/auth_service.dart';
+import '../../services/biometric_service.dart';
 import '../../services/transaction_service.dart';
 import '../../services/cart_service.dart';
 import '../../database/db_helper.dart';
@@ -148,7 +149,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       await prefs.setBool('promo_voucher_enabled', value);
                       setModalState(() => _isPromoVoucherEnabled = value);
                       setState(() => _isPromoVoucherEnabled = value);
-                      if (value && mounted) {
+                      if (value) {
+                        if (!context.mounted) return;
                         Navigator.pop(context);
                         _showActivePromosDialog();
                       }
@@ -163,39 +165,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     onChanged: (value) async {
                       final prefs = await SharedPreferences.getInstance();
                       if (value) {
-                        final confirmed = await showDialog<bool>(
+                        if (!context.mounted) return;
+                        final confirmed = await BiometricService().authenticate(
                           context: context,
-                          builder: (context) => AlertDialog(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            title: const Row(
-                              children: [
-                                Icon(Icons.fingerprint, color: Color(0xFF1E3A8A)),
-                                SizedBox(width: 8),
-                                Text('Aktifkan Biometrik?'),
-                              ],
-                            ),
-                            content: const Text(
-                              'Gunakan sensor sidik jari atau Face ID perangkat ini untuk login cepat & verifikasi pembayaran di BlueMart.',
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, false),
-                                child: const Text('Batal'),
-                              ),
-                              ElevatedButton(
-                                onPressed: () => Navigator.pop(context, true),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF1E3A8A),
-                                  foregroundColor: Colors.white,
-                                ),
-                                child: const Text('Aktifkan'),
-                              ),
-                            ],
-                          ),
+                          localizedReason: 'Sentuh sensor sidik jari Anda untuk mengaktifkan kunci biometrik BlueMart',
                         );
-                        if (confirmed == true) {
+                        if (confirmed) {
                           await prefs.setBool('biometric_enabled', true);
                           setModalState(() => _isBiometricEnabled = true);
                           setState(() => _isBiometricEnabled = true);
